@@ -1,8 +1,9 @@
 {
-  "name": "performance-attribution",
+  "name": "agno-vue",
   "version": "1.0.0",
   "type": "module",
-  "description": "Performance attribution analysis tool",
+  "description": "Agno Vue UI for AI agent interactions",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -1,7 +1,7 @@
 <template>
   <Layout>
     <template #header>
-      <h1>Ango-Vue-ElementUI</h1> 
+      <h1>Ango-Vue</h1> 
     </template>
     
     <template #aside>
