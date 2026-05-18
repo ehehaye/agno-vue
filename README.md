@@ -1,8 +1,10 @@
-# Agno Vue ElementUI
+# Agno Vue
 
 [中文](./README-zh.md)
 
 An Agno front-end UI interface built with Vue 2, providing a smooth user experience for AI agent interactions. The project is designed to support seamless migration to Vue 3.
+
+If you are using element-ui, we provide a Chinese-friendly [element-ui version](https://github.com/ehehaye/agno-vue/tree/element-ui) .
 
 ![Preview](http://momos-image-upyun.test.upcdn.net/uPic/2026/05/18/jBDUXC.png)
 
