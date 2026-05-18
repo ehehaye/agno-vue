@@ -78,29 +78,6 @@ export default {
       border-right: 1px solid @border-color;
       overflow: hidden;
       background-color: #f5f7fa;
-
-      ::v-deep .el-menu {
-        border-right: none;
-        padding: @spacing-md 0;
-
-        .el-menu-item {
-          height: 40px;
-          line-height: 40px;
-
-          &:hover {
-            background-color: #e6f7ff !important;
-          }
-        }
-
-        .el-sub-menu__title {
-          height: 40px;
-          line-height: 40px;
-
-          &:hover {
-            background-color: #e6f7ff !important;
-          }
-        }
-      }
     }
 
     .layout-main {

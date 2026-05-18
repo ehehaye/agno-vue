@@ -100,10 +100,7 @@ export default {
     },
     focusInput() {
       this.$nextTick(() => {
-        const textarea = document.querySelector('.ai-chat .el-textarea__inner');
-        if (textarea) {
-          textarea.focus();
-        } else if (this.$refs.inputRef) {
+        if (this.$refs.inputRef) {
           this.$refs.inputRef.focus?.();
         }
       });
