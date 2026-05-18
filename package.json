@@ -1,0 +1,28 @@
+{
+  "name": "performance-attribution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Performance attribution analysis tool",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@rodrigocoliveira/agno-client": "^1.3.0",
+    "element-ui": "^2.15.14",
+    "highlight.js": "^11.11.1",
+    "marked": "^18.0.2",
+    "vue": "^2.7.16",
+    "vue-i18n": "^8.28.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.53.0",
+    "eslint-plugin-vue": "^9.18.0",
+    "less": "^4.6.4",
+    "prettier": "^3.1.0",
+    "vite": "^4.5.2",
+    "vite-plugin-vue2": "^2.0.3"
+  }
+}
