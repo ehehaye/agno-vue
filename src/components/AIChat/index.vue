@@ -23,33 +23,30 @@
     </div>
 
     <div class="chat-input-area">
-      <el-input
+      <textarea
         ref="inputRef"
         v-model="inputText"
-        type="textarea"
-        :rows="3"
+        rows="3"
         :placeholder="$t('chat.placeholder', { key: isMac ? 'Command + Enter' : 'Alt + Enter' })"
-        @keydown.native="handleKeydown"
+        @keydown="handleKeydown"
       />
       <div class="input-wrapper">
         <p class="tip">
           <span>{{ $t('chat.sendKey', { key: isMac ? 'Command + Enter' : 'Alt + Enter' }) }}</span>
         </p>
-        <el-button 
+        <button
           v-if="isStreaming"
-          type="primary"
           @click="$agno.cancelRun()"
         >
           {{ $t('chat.stop') }}
-        </el-button>
-        <el-button
+        </button>
+        <button
           v-else
-          type="primary"
           :disabled="!inputText.trim()"
           @click="handleSend"
         >
           {{ $t('chat.send') }}
-        </el-button>
+        </button>
       </div>
     </div>
   </div>
@@ -100,10 +97,7 @@ export default {
     },
     focusInput() {
       this.$nextTick(() => {
-        const textarea = document.querySelector('.ai-chat .el-textarea__inner');
-        if (textarea) {
-          textarea.focus();
-        } else if (this.$refs.inputRef) {
+        if (this.$refs.inputRef) {
           this.$refs.inputRef.focus?.();
         }
       });

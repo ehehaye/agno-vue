@@ -1,38 +1,28 @@
 <template>
-  <el-container class="layout-container">
-    <el-header class="layout-header">
+  <div class="layout-container">
+    <header class="layout-header">
       <slot name="header" />
       <div class="header-right">
-        <el-select
+        <select
           v-model="$i18n.locale"
           class="lang-select"
-          :size="'small'"
         >
-          <el-option
-            label="中文"
-            value="zh"
-          />
-          <el-option
-            label="English"
-            value="en"
-          />
-        </el-select>
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
       </div>
-    </el-header>
+    </header>
 
-    <el-container class="layout-body">
-      <el-aside
-        class="layout-aside"
-        width="300px"
-      >
+    <div class="layout-body">
+      <aside class="layout-aside">
         <slot name="aside" />
-      </el-aside>
+      </aside>
 
-      <el-main class="layout-main">
+      <main class="layout-main">
         <slot name="main" />
-      </el-main>
-    </el-container>
-  </el-container>
+      </main>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -65,6 +55,7 @@ export default {
 
       .lang-select {
         width: 100px;
+        color: @text-color;
       }
     }
   }
@@ -75,32 +66,10 @@ export default {
     overflow: hidden;
 
     .layout-aside {
+      width: 300px;
       border-right: 1px solid @border-color;
       overflow: hidden;
       background-color: #f5f7fa;
-
-      ::v-deep .el-menu {
-        border-right: none;
-        padding: @spacing-md 0;
-
-        .el-menu-item {
-          height: 40px;
-          line-height: 40px;
-
-          &:hover {
-            background-color: #e6f7ff !important;
-          }
-        }
-
-        .el-sub-menu__title {
-          height: 40px;
-          line-height: 40px;
-
-          &:hover {
-            background-color: #e6f7ff !important;
-          }
-        }
-      }
     }
 
     .layout-main {

@@ -97,3 +97,60 @@ textarea {
   line-height: inherit;
   color: inherit;
 }
+
+button {
+  background-color: @primary-color;
+  padding: @spacing-sm @spacing-md;
+  border-radius: @border-radius-md;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 1px;
+  color: #fff;
+  outline: none;
+  cursor: pointer;
+
+  &[disabled] {
+    color: #c0c4cc;
+    cursor: not-allowed;
+    background-image: none;
+    background-color: #fff;
+    border-color: #ebeef5 !important;
+  }
+}
+
+textarea {
+  display: block;
+  resize: vertical;
+  padding: 5px 15px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  width: 100%;
+  font-size: inherit;
+  color: #606266;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+
+  &:focus {
+    outline: none;
+    border-color: @primary-color;
+  }
+}
+
+select {
+  border: 1px solid @border-color;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: @primary-color;
+  }
+
+  &:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+}

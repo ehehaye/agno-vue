@@ -2,14 +2,12 @@
   <div class="sessions-section">
     <div class="section-header">
       <h3 class="section-title">{{ $t('sidebar.historySessions') }}</h3>
-      <el-button
-        type="primary"
-        size="small"
-        circle
+      <button
         class="add-btn"
-        icon="el-icon-plus"
         @click="$agno.newSession()"
-      />
+      >
+        +
+      </button>
     </div>
     <div class="sessions-list">
       <div
@@ -23,12 +21,12 @@
           <div class="session-title">{{ session.session_name }}</div>
           <div class="session-time">{{ formatTime(session.created_at) }}</div>
         </div>
-        <el-button
+        <button
           class="delete-btn"
-          size="small"
-          icon="el-icon-delete"
           @click.stop="handleDelete(session.session_id)"
-        />
+        >
+          x
+        </button>
       </div>
       <div
         v-if="!$agno.sessions.length"
@@ -48,11 +46,9 @@ export default {
       return new Date(time).toLocaleString();
     },
     async handleDelete(sessionId) {
-      await this.$confirm(this.$t('sidebar.deleteConfirm'), this.$t('sidebar.prompt'), {
-        confirmButtonText: this.$t('sidebar.confirm'),
-        cancelButtonText: this.$t('sidebar.cancel'),
-        type: 'warning'
-      })
+      if (!confirm(this.$t('sidebar.deleteConfirm'))) {
+        return;
+      }
       await this.$agno.deleteSession(sessionId);
     }
   },
@@ -150,6 +146,8 @@ export default {
         width: 24px;
         height: 24px;
         border-radius: 50%;
+        border-color: transparent;
+        background-color: transparent;
         color: @error-color;
       }
     }
