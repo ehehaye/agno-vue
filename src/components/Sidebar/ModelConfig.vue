@@ -2,7 +2,7 @@
   <div class="model-config-section">
     <el-collapse v-model="activeNames">
       <el-collapse-item
-        :title="$t('sidebar.modelConfig')"
+        :title="模型配置"
         name="model-config"
       >
         <el-form
@@ -10,7 +10,7 @@
           label-width="50px"
         >
           <el-form-item
-            :label="$t('sidebar.mode')"
+            label="模式"
           >
             <el-select
               v-model="$agno.config.mode"
@@ -86,6 +86,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .model-config-section {
   border-top: 1px solid @border-color;
   background-color: #f8f9fa;

@@ -32,6 +32,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .dashboard {
   display: flex;
   flex-direction: column;

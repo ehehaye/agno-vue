@@ -19,6 +19,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .chat-sidebar {
   height: calc(100vh - @header-height);
   display: flex;

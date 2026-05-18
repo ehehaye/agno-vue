@@ -2,22 +2,6 @@
   <el-container class="layout-container">
     <el-header class="layout-header">
       <slot name="header" />
-      <div class="header-right">
-        <el-select
-          v-model="$i18n.locale"
-          class="lang-select"
-          :size="'small'"
-        >
-          <el-option
-            label="中文"
-            value="zh"
-          />
-          <el-option
-            label="English"
-            value="en"
-          />
-        </el-select>
-      </div>
     </el-header>
 
     <el-container class="layout-body">
@@ -42,6 +26,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .layout-container {
   display: flex;
   flex-direction: column;
@@ -56,17 +42,6 @@ export default {
     display: flex;
     align-items: center;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    justify-content: space-between;
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: @spacing-md;
-
-      .lang-select {
-        width: 100px;
-      }
-    }
   }
 
   .layout-body {

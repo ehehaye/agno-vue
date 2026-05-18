@@ -10,7 +10,7 @@
         class="empty-state"
       >
         <div class="empty-icon">💬</div>
-        <p>{{ $t('chat.emptyState') }}</p>
+        <p>开始一段新对话吧</p>
       </div>
       <ChatMessage
         v-for="(msg, index) in messages"
@@ -28,19 +28,19 @@
         v-model="inputText"
         type="textarea"
         :rows="3"
-        :placeholder="$t('chat.placeholder', { key: isMac ? 'Command + Enter' : 'Alt + Enter' })"
+        :placeholder="isMac ? '输入您的问题，按 Command + Enter 发送...' : '输入您的问题，按 Alt + Enter 发送...'"
         @keydown.native="handleKeydown"
       />
       <div class="input-wrapper">
         <p class="tip">
-          <span>{{ $t('chat.sendKey', { key: isMac ? 'Command + Enter' : 'Alt + Enter' }) }}</span>
+          <span>{{ isMac ? 'Command + Enter 发送' : 'Alt + Enter 发送' }}</span>
         </p>
         <el-button 
           v-if="isStreaming"
           type="primary"
           @click="$agno.cancelRun()"
         >
-          {{ $t('chat.stop') }}
+          停止
         </el-button>
         <el-button
           v-else
@@ -48,7 +48,7 @@
           :disabled="!inputText.trim()"
           @click="handleSend"
         >
-          {{ $t('chat.send') }}
+          发送
         </el-button>
       </div>
     </div>
@@ -157,6 +157,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .ai-chat {
   display: flex;
   flex-direction: column;

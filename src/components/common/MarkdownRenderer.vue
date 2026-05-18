@@ -68,6 +68,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .markdown-renderer {
   line-height: 1.8;
   color: @text-color;

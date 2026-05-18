@@ -1,7 +1,7 @@
 <template>
   <div class="sessions-section">
     <div class="section-header">
-      <h3 class="section-title">{{ $t('sidebar.historySessions') }}</h3>
+      <h3 class="section-title">历史会话</h3>
       <el-button
         type="primary"
         size="small"
@@ -34,7 +34,7 @@
         v-if="!$agno.sessions.length"
         class="empty-state"
       >
-        <p>{{ $t('sidebar.noSessions') }}</p>
+        <p>暂无历史会话</p>
       </div>
     </div>
   </div>
@@ -48,9 +48,9 @@ export default {
       return new Date(time).toLocaleString();
     },
     async handleDelete(sessionId) {
-      await this.$confirm(this.$t('sidebar.deleteConfirm'), this.$t('sidebar.prompt'), {
-        confirmButtonText: this.$t('sidebar.confirm'),
-        cancelButtonText: this.$t('sidebar.cancel'),
+      await this.$confirm('确定要删除这个会话吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
         type: 'warning'
       })
       await this.$agno.deleteSession(sessionId);
@@ -60,6 +60,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .sessions-section {
   flex: 1;
   display: flex;

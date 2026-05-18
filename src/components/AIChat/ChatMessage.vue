@@ -37,7 +37,7 @@
       >
         <div class="thinking-header">
           <span class="thinking-icon">🧐</span>
-          <span class="thinking-label">{{ $t('chat.thinking') }}</span>
+          <span class="thinking-label">思考中...</span>
         </div>
         <div class="thinking-content">{{ thinking }}</div>
       </div>
@@ -97,6 +97,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import '/src/assets/styles/variables.less';
+
 .chat-message {
   display: flex;
   gap: @spacing-md;
