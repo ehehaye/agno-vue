@@ -22,7 +22,6 @@ export const $agno = new Vue({
       sessionId: '',
       messages: [],
       isStreaming: false,
-      isLoading: false,
     };
   },
   methods: {
@@ -63,55 +62,39 @@ export const $agno = new Vue({
       }
     },
     async initialize() {
-      this.isLoading = true;
-      try {
-        const { agents = [], teams = [] } = (await client.initialize()) || {};
+      client.on('message:update', (messages) => {
+        this.messages = messages;
+      });
 
-        client.on('message:update', (messages) => {
-          this.messages = messages;
-        });
+      client.on('message:complete', (messages) => {
+        this.messages = messages;
+      });
 
-        client.on('message:complete', (messages) => {
-          this.messages = messages;
-        });
+      client.on('stream:start', () => {
+        this.isStreaming = true;
+      });
 
-        client.on('stream:start', () => {
-          this.isStreaming = true;
-        });
+      client.on('stream:end', () => {
+        this.isStreaming = false;
+      });
 
-        client.on('stream:end', () => {
-          this.isStreaming = false;
-        });
-
-        client.on('state:change', () => {
-          this.setSessionConfig();
-        });
-
-        const config = client.getConfig();
-        this.config = { ...config };
-        this.agents = agents;
-        this.teams = teams;
+      client.on('state:change', () => {
         this.setSessionConfig();
+      });
 
-        try {
-          this.sessions = await client.fetchSessions({
-            params: {
-              page: DEFAULT_PAGE,
-              limit: DEFAULT_LIMIT,
-            },
-          });
-        } catch (error) {
-          console.error('Error fetching sessions:', error);
-          this.sessions = [];
-        }
-      } catch (error) {
-        console.error('Error initialize client client:', error);
-        this.agents = [];
-        this.teams = [];
-        this.sessions = [];
-      } finally {
-        this.isLoading = false;
-      }
+      const { agents = [], teams = [] } = await client.initialize();
+      const config = client.getConfig();
+      this.config = { ...config };
+      this.agents = agents;
+      this.teams = teams;
+      this.setSessionConfig();
+
+      this.sessions = await client.fetchSessions({
+        params: {
+          page: DEFAULT_PAGE,
+          limit: DEFAULT_LIMIT,
+        },
+      });
     },
     async sendMessage(message = '') {
       if (!message || typeof message !== 'string' || !message.trim()) {
