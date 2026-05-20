@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@rodrigocoliveira/agno-client':
-        specifier: ^1.3.0
-        version: 1.3.0
+        specifier: ^1.3.1
+        version: 1.3.1
       highlight.js:
         specifier: ^11.11.1
         version: 11.11.1
@@ -532,11 +532,11 @@ packages:
     resolution: {integrity: sha512-tmmZ3lQxAe/k/+rNnXQRawJ4NjxO2hqiOLTHvWchtGZULp4RyFeh6aU4XdOYBFe2KE1oShQTv4AblOs2iOrNnQ==}
     engines: {node: '>= 10.0.0'}
 
-  '@rodrigocoliveira/agno-client@1.3.0':
-    resolution: {integrity: sha512-A4SJfn24dEvAkntBRBZUyeJ4SF3h1/KHtwBQqsIp7IgFjffNEF/qi2RsB4MjFZGEZx0jag02xWjxvK9QUPiMlA==}
+  '@rodrigocoliveira/agno-client@1.3.1':
+    resolution: {integrity: sha512-dTF/C/vDUNm4Vlrt9oPs54cfVv+tziv3qjNitvhmT/Ea9nmjVBbAMOnq7GPGEVn9vVQEaBByYWH3PA3tdLbwNw==}
 
-  '@rodrigocoliveira/agno-types@1.3.0':
-    resolution: {integrity: sha512-zU3wCM/rbCVG4AI+GMYshYNEtlqDFNCTO41lBmXDZxaFHfBtAFfx6G1VaoawSnH8fXrw7Qgk9O+4avwnrWLyZw==}
+  '@rodrigocoliveira/agno-types@1.3.1':
+    resolution: {integrity: sha512-qXyr5/rqjJpYv1Ncb/Cf57vO38O1wtcWtLXgWpncqi5WXVfi4YoxV9uXlXdTzp/YMRJKsQiItWySQI++3MuNng==}
 
   '@rollup/pluginutils@4.2.1':
     resolution: {integrity: sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==}
@@ -2129,12 +2129,12 @@ snapshots:
       '@parcel/watcher-win32-x64': 2.5.6
     optional: true
 
-  '@rodrigocoliveira/agno-client@1.3.0':
+  '@rodrigocoliveira/agno-client@1.3.1':
     dependencies:
-      '@rodrigocoliveira/agno-types': 1.3.0
+      '@rodrigocoliveira/agno-types': 1.3.1
       eventemitter3: 5.0.4
 
-  '@rodrigocoliveira/agno-types@1.3.0': {}
+  '@rodrigocoliveira/agno-types@1.3.1': {}
 
   '@rollup/pluginutils@4.2.1':
     dependencies:

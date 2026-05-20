@@ -11,7 +11,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@rodrigocoliveira/agno-client": "^1.3.0",
+    "@rodrigocoliveira/agno-client": "^1.3.1",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.2",
     "vue": "^2.7.16",
