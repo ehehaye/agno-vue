@@ -2,7 +2,7 @@
   <div class="model-config-section">
     <el-collapse v-model="activeNames">
       <el-collapse-item
-        :title="模型配置"
+        title="模型配置"
         name="model-config"
       >
         <el-form
