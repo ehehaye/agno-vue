@@ -59,6 +59,7 @@ export const $agno = new Vue({
         console.error('Error in setSessionConfig:', error);
         this.sessions = [];
         this.messages = [];
+        this.sessionId = '';
       }
     },
     async initialize() {
@@ -82,19 +83,15 @@ export const $agno = new Vue({
         this.setSessionConfig();
       });
 
+      client.on('config:change', () => {
+        this.loadSessions()
+      });
+
       const { agents = [], teams = [] } = await client.initialize();
       const config = client.getConfig();
       this.config = { ...config };
       this.agents = agents;
       this.teams = teams;
-      this.setSessionConfig();
-
-      this.sessions = await client.fetchSessions({
-        params: {
-          page: DEFAULT_PAGE,
-          limit: DEFAULT_LIMIT,
-        },
-      });
     },
     async sendMessage(message = '') {
       if (!message || typeof message !== 'string' || !message.trim()) {
@@ -137,6 +134,15 @@ export const $agno = new Vue({
         console.error('Error deleting session:', error);
         throw error;
       }
+    },
+    async loadSessions() {
+      await client.fetchSessions({
+        params: {
+          page: DEFAULT_PAGE,
+          limit: DEFAULT_LIMIT,
+        },
+      });
+      this.setSessionConfig();
     },
     async loadSession(sessionId) {
       if (!sessionId) {
