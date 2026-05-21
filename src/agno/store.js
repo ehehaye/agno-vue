@@ -136,6 +136,7 @@ export const $agno = new Vue({
       }
     },
     async loadSessions() {
+      client.clearMessages();
       await client.fetchSessions({
         params: {
           page: DEFAULT_PAGE,
