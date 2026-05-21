@@ -10,7 +10,7 @@
           v-model="$agno.config.mode"
           :disabled="isStreaming"
           class="form-select"
-          @change="$agno.setMode($event)"
+          @change="$agno.setMode($event.target.value)"
         >
           <option
             :disabled="!$agno.agents.length"
