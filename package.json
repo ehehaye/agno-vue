@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Agno Vue UI for AI agent interactions",
+  "author": "hongxin.tang@hotmail.com",
+  "repository": {
+    "url": "https://github.com/ehehaye/agno-vue.git"
+  },
   "license": "MIT",
   "scripts": {
     "dev": "vite",
