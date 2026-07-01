@@ -36,7 +36,7 @@
         </p>
         <button
           v-if="isStreaming"
-          @click="$agno.cancelRun()"
+          @click="cancelRun"
         >
           {{ $t('chat.stop') }}
         </button>
@@ -53,104 +53,126 @@
 </template>
 
 <script>
+import { defineComponent, nextTick, onMounted, ref, watch } from '@vue/composition-api';
+import { useAgnoChat } from '@/hooks/useAgnoChat';
+import { useAgnoSession } from '@/hooks/useAgnoSession';
 import ChatMessage from './ChatMessage.vue';
 
-export default {
+export default defineComponent({
   name: 'AiChat',
   components: {
     ChatMessage,
   },
-  data() {
-    return {
-      inputText: '',
-      isMac: navigator.platform.toUpperCase().indexOf('MAC') >= 0,
-      isUserScrolling: false,
-      scrollTolerance: 50,
+  setup() {
+    const chat = useAgnoChat();
+    const { messages, sendMessage } = chat;
+    const { currentSessionId } = useAgnoSession();
+
+    const inputRef = ref(null);
+    const messageListRef = ref(null);
+    const inputText = ref('');
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const isUserScrolling = ref(false);
+    const scrollTolerance = 50;
+
+    const clearInput = () => {
+      inputText.value = '';
     };
-  },
-  computed: {
-    isStreaming() {
-      return this.$agno.isStreaming;
-    },
-    messages() {
-      return this.$agno.messages;
-    },
-  },
-  watch: {
-    '$agno.sessionId'() {
-      this.clearInput();
-      this.focusInput();
-    },
-    messages: {
-      handler() {
-        this.smartScrollToBottom();
-      },
-      deep: true,
-    },
-  },
-  mounted() {
-    this.focusInput();
-  },
-  methods: {
-    clearInput() {
-      this.inputText = '';
-    },
-    focusInput() {
-      this.$nextTick(() => {
-        if (this.$refs.inputRef) {
-          this.$refs.inputRef.focus?.();
-        }
+
+    const focusInput = () => {
+      nextTick(() => {
+        inputRef.value?.focus?.();
       });
-    },
-    async scrollToBottom() {
-      if (this.$refs.messageListRef) {
-        await this.$nextTick();
-        this.$refs.messageListRef.scrollTo({
-          top: this.$refs.messageListRef.scrollHeight,
+    };
+
+    const scrollToBottom = async () => {
+      if (messageListRef.value) {
+        await nextTick();
+        messageListRef.value.scrollTo({
+          top: messageListRef.value.scrollHeight,
           behavior: 'smooth',
-        })
+        });
       }
-    },
-    smartScrollToBottom() {
-      if (!this.isUserScrolling) {
-        this.scrollToBottom();
+    };
+
+    const smartScrollToBottom = () => {
+      if (!isUserScrolling.value) {
+        scrollToBottom();
       }
-    },
-    handleScroll() {
-      if (!this.$refs.messageListRef) return;
-      const { scrollTop, scrollHeight, clientHeight } = this.$refs.messageListRef;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight <= this.scrollTolerance;
-      this.isUserScrolling = !isNearBottom;
-    },
-    handleKeydown(event) {
+    };
+
+    const handleScroll = () => {
+      if (!messageListRef.value) return;
+      const { scrollTop, scrollHeight, clientHeight } = messageListRef.value;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight <= scrollTolerance;
+      isUserScrolling.value = !isNearBottom;
+    };
+
+    const handleKeydown = (event) => {
       if (event.key === 'Enter') {
-        if (this.isMac ? event.metaKey : event.altKey) {
-          this.handleSend();
+        if (isMac ? event.metaKey : event.altKey) {
+          handleSend();
         }
       }
-    },
-    formatThinking(msg) {
-      const { extra_data } = msg
+    };
+
+    const formatThinking = (msg) => {
+      const { extra_data } = msg;
       if (!extra_data) return '';
-      const { reasoning_content = '', reasoning_messages = [], reasoning_steps = [] } = extra_data
+      const { reasoning_content = '', reasoning_messages = [], reasoning_steps = [] } = extra_data;
       if (reasoning_content) return reasoning_content;
       if (reasoning_messages.length) return reasoning_messages.map(step => step.reasoning).join('\n');
       if (reasoning_steps.length) return reasoning_steps.map(step => step.reasoning).join('\n');
       return '';
-    },
-    async handleSend() {
-      const text = this.inputText.trim();
+    };
+
+    const handleSend = async () => {
+      const text = inputText.value.trim();
       if (!text) return;
       try {
-        this.clearInput();
-        await this.scrollToBottom();
-        await this.$agno.sendMessage(text);
+        clearInput();
+        await scrollToBottom();
+        await sendMessage(text);
       } finally {
-        await this.scrollToBottom();
+        await scrollToBottom();
       }
-    },
+    };
+
+    watch(currentSessionId, () => {
+      clearInput();
+      focusInput();
+    });
+
+    watch(
+      messages,
+      () => {
+        smartScrollToBottom();
+      },
+      { deep: true }
+    );
+
+    onMounted(() => {
+      focusInput();
+    });
+
+    return {
+      ...chat,
+      currentSessionId,
+      inputRef,
+      messageListRef,
+      inputText,
+      isMac,
+      clearInput,
+      focusInput,
+      scrollToBottom,
+      smartScrollToBottom,
+      handleScroll,
+      handleKeydown,
+      formatThinking,
+      handleSend,
+    };
   },
-};
+});
 </script>
 
 <style lang="less" scoped>

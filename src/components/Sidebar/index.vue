@@ -6,16 +6,17 @@
 </template>
 
 <script>
+import { defineComponent } from '@vue/composition-api';
 import SessionList from './SessionList.vue';
 import ModelConfig from './ModelConfig.vue';
 
-export default {
+export default defineComponent({
   name: 'Sidebar',
   components: {
     SessionList,
     ModelConfig,
   },
-};
+});
 </script>
 
 <style lang="less" scoped>

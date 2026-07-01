@@ -7,19 +7,19 @@
       <div class="form-item">
         <label class="form-label">{{ $t('sidebar.mode') }}</label>
         <select
-          v-model="$agno.config.mode"
+          v-model="config.mode"
           :disabled="isStreaming"
           class="form-select"
-          @change="$agno.setMode($event.target.value)"
+          @change="setMode($event.target.value)"
         >
           <option
-            :disabled="!$agno.agents.length"
+            :disabled="!agents.length"
             value="agent"
           >
             AGENT
           </option>
           <option
-            :disabled="!$agno.teams.length"
+            :disabled="!teams.length"
             value="team"
           >
             TEAM
@@ -28,16 +28,16 @@
       </div>
 
       <div class="form-item">
-        <label class="form-label">{{ $agno.config.mode === 'agent' ? 'AGENT' : 'TEAM' }}</label>
-        <template v-if="$agno.config.mode === 'agent'">
+        <label class="form-label">{{ config.mode === 'agent' ? 'AGENT' : 'TEAM' }}</label>
+        <template v-if="config.mode === 'agent'">
           <select
-            v-model="$agno.config.agentId"
+            v-model="config.agentId"
             :disabled="isStreaming"
             class="form-select"
-            @change="$agno.setConfig()"
+            @change="setConfig()"
           >
             <option
-              v-for="agent in $agno.agents"
+              v-for="agent in agents"
               :key="agent.id"
               :value="agent.id"
             >
@@ -46,15 +46,15 @@
           </select>
         </template>
 
-        <template v-if="$agno.config.mode === 'team'">
+        <template v-if="config.mode === 'team'">
           <select
-            v-model="$agno.config.teamId"
+            v-model="config.teamId"
             :disabled="isStreaming"
             class="form-select"
-            @change="$agno.setConfig()"
+            @change="setConfig()"
           >
             <option
-              v-for="team in $agno.teams"
+              v-for="team in teams"
               :key="team.id"
               :value="team.id"
             >
@@ -68,14 +68,24 @@
 </template>
 
 <script>
-export default {
+import { defineComponent } from '@vue/composition-api';
+import { useAgnoActions } from '@/hooks/useAgnoActions';
+
+export default defineComponent({
   name: 'ModelConfig',
-  computed: {
-    isStreaming() {
-      return this.$agno.isStreaming;
-    },
+  setup() {
+    const { config, agents, teams, isStreaming, setConfig, setMode } = useAgnoActions();
+
+    return {
+      config,
+      agents,
+      teams,
+      isStreaming,
+      setConfig,
+      setMode,
+    };
   },
-};
+});
 </script>
 
 <style lang="less" scoped>

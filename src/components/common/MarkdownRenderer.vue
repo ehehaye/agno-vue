@@ -1,12 +1,15 @@
 <template>
   <div class="markdown-renderer">
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-html="displayedHtml" />
   </div>
 </template>
 
 <script>
+import { defineComponent } from '@vue/composition-api';
+import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import hljs from 'highlight.js';
+import hljs from 'highlight.js/lib/common';
 
 marked.setOptions({
   highlight: function (code, lang) {
@@ -19,7 +22,7 @@ marked.setOptions({
   gfm: true,
 });
 
-export default {
+export default defineComponent({
   name: 'MarkdownRenderer',
   props: {
     content: {
@@ -49,6 +52,11 @@ export default {
       immediate: true,
     },
   },
+  beforeDestroy() {
+    if (this.htmlRafId) {
+      cancelAnimationFrame(this.htmlRafId);
+    }
+  },
   methods: {
     updateHtml() {
       if (this.htmlRafId) {
@@ -56,15 +64,13 @@ export default {
       }
       this.htmlRafId = requestAnimationFrame(() => {
         this.pendingUpdate = false;
-        if (this.content) {
-          this.displayedHtml = marked(this.content);
-        } else {
-          this.displayedHtml = '';
-        }
+        this.displayedHtml = this.content
+          ? DOMPurify.sanitize(marked(this.content))
+          : '';
       });
     },
   },
-};
+});
 </script>
 
 <style lang="less" scoped>

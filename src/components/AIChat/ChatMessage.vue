@@ -1,11 +1,11 @@
 <template>
   <div
     class="chat-message"
-    :class="[`message-${type}`, { streaming }]"
+    :class="[`message-${messageType}`, { streaming }]"
   >
     <div class="message-avatar">
       <div
-        v-if="type === 'user'"
+        v-if="isUserMessage"
         class="avatar user-avatar"
       >
         <span>User</span>
@@ -20,10 +20,10 @@
     <div class="message-content">
       <div class="message-header">
         <span class="message-name">{{
-          type === 'user' ? 'User' : 'AI Assistant'
+          isUserMessage ? $t('message.user') : $t('message.ai')
         }}</span>
         <span
-          v-if="streaming && type !== 'user'"
+          v-if="streaming && !isUserMessage"
           class="streaming-indicator"
         >
           <span class="dot" />
@@ -43,7 +43,7 @@
       </div>
       <div class="message-body">
         <div
-          v-if="type === 'user'"
+          v-if="isUserMessage"
           class="user-message"
           v-text="content"
         />
@@ -58,9 +58,10 @@
 </template>
 
 <script>
+import { defineComponent } from '@vue/composition-api';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer.vue';
 
-export default {
+export default defineComponent({
   name: 'ChatMessage',
   components: {
     MarkdownRenderer,
@@ -68,8 +69,8 @@ export default {
   props: {
     type: {
       type: String,
-      enum: ['user', 'ai'],
       default: 'user',
+      validator: (value) => ['user', 'ai', 'agent', 'assistant'].includes(value),
     },
     content: {
       type: String,
@@ -85,15 +86,14 @@ export default {
     },
   },
   computed: {
-    formattedContent() {
-      return this.content
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\n/g, '<br>');
+    isUserMessage() {
+      return this.type === 'user';
+    },
+    messageType() {
+      return this.isUserMessage ? 'user' : 'ai';
     },
   },
-};
+});
 </script>
 
 <style lang="less" scoped>

@@ -4,18 +4,18 @@
       <h3 class="section-title">{{ $t('sidebar.historySessions') }}</h3>
       <button
         class="add-btn"
-        @click="$agno.newSession()"
+        @click="newSession"
       >
         +
       </button>
     </div>
     <div class="sessions-list">
       <div
-        v-for="(session) in $agno.sessions"
+        v-for="(session) in sessions"
         :key="session.session_id"
         class="session-item"
-        :class="{ active: session.session_id === $agno.sessionId }"
-        @click="$agno.loadSession(session.session_id)"
+        :class="{ active: session.session_id === currentSessionId }"
+        @click="loadSession(session.session_id)"
       >
         <div class="session-content">
           <div class="session-title">{{ session.session_name }}</div>
@@ -29,7 +29,7 @@
         </button>
       </div>
       <div
-        v-if="!$agno.sessions.length"
+        v-if="!sessions.length"
         class="empty-state"
       >
         <p>{{ $t('sidebar.noSessions') }}</p>
@@ -39,20 +39,42 @@
 </template>
 
 <script>
-export default {
+import { defineComponent, watch } from '@vue/composition-api';
+import { useAgnoSession } from '@/hooks/useAgnoSession';
+import { useAgnoActions } from '@/hooks/useAgnoActions';
+
+export default defineComponent({
   name: 'SessionList',
-  methods: {
-    formatTime(time) {
-      return new Date(time).toLocaleString();
-    },
-    async handleDelete(sessionId) {
-      if (!confirm(this.$t('sidebar.deleteConfirm'))) {
+  setup(_, { root }) {
+    const { config } = useAgnoActions();
+    const { sessions, currentSessionId, fetchSessions, loadSession, newSession, deleteSession } = useAgnoSession();
+
+    const formatTime = (time) => new Date(time).toLocaleString();
+
+    const handleDelete = async (sessionId) => {
+      if (!window.confirm(root.$t('sidebar.deleteConfirm'))) {
         return;
       }
-      await this.$agno.deleteSession(sessionId);
-    }
+
+      await deleteSession(sessionId);
+    };
+
+    watch(
+      config,
+      fetchSessions,
+      { immediate: true }
+    );
+
+    return {
+      sessions,
+      currentSessionId,
+      loadSession,
+      newSession,
+      formatTime,
+      handleDelete,
+    };
   },
-};
+});
 </script>
 
 <style lang="less" scoped>

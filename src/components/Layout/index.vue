@@ -26,9 +26,10 @@
 </template>
 
 <script>
-export default {
+import { defineComponent } from '@vue/composition-api';
+export default defineComponent({
   name: 'Layout',
-};
+});
 </script>
 
 <style lang="less" scoped>

@@ -10,8 +10,8 @@ const i18n = new VueI18n({
   fallbackLocale: 'en',
   messages: {
     zh,
-    en
-  }
+    en,
+  },
 });
 
 export default i18n;

@@ -1,4 +1,9 @@
 export default {
+  app: {
+    initializing: 'Initializing...',
+    initFailed: 'Initialization failed',
+    retry: 'Retry',
+  },
   sidebar: {
     historySessions: 'History Sessions',
     noSessions: 'No history sessions',
@@ -7,7 +12,7 @@ export default {
     confirm: 'Confirm',
     cancel: 'Cancel',
     deleteConfirm: 'Are you sure you want to delete this session?',
-    prompt: 'Prompt'
+    prompt: 'Prompt',
   },
   chat: {
     emptyState: 'Start a new conversation',
@@ -15,10 +20,10 @@ export default {
     sendKey: '{key} to send',
     send: 'Send',
     stop: 'Stop',
-    thinking: 'Thinking...'
+    thinking: 'Thinking...',
   },
   message: {
     user: 'User',
-    ai: 'AI Assistant'
-  }
+    ai: 'AI Assistant',
+  },
 };
