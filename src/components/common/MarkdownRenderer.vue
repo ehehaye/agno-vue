@@ -29,10 +29,6 @@ export default defineComponent({
       type: String,
       default: '',
     },
-    streaming: {
-      type: Boolean,
-      default: false,
-    },
   },
   data() {
     return {

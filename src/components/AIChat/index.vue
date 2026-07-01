@@ -18,7 +18,6 @@
         :type="msg.role"
         :content="msg.content"
         :thinking="formatThinking(msg)"
-        :streaming="isStreaming"
       />
     </div>
 
@@ -31,9 +30,11 @@
         @keydown="handleKeydown"
       />
       <div class="input-wrapper">
-        <p class="tip">
-          <span>{{ $t('chat.sendKey', { key: isMac ? 'Command + Enter' : 'Alt + Enter' }) }}</span>
-        </p>
+        <div>
+          <StreamingIndicator
+            v-show="isStreaming"
+          />
+        </div>
         <button
           v-if="isStreaming"
           @click="cancelRun"
@@ -56,12 +57,14 @@
 import { defineComponent, nextTick, onMounted, ref, watch } from '@vue/composition-api';
 import { useAgnoChat } from '@/hooks/useAgnoChat';
 import { useAgnoSession } from '@/hooks/useAgnoSession';
+import StreamingIndicator from '@/components/StreamingIndicator.vue';
 import ChatMessage from './ChatMessage.vue';
 
 export default defineComponent({
   name: 'AiChat',
   components: {
     ChatMessage,
+    StreamingIndicator,
   },
   setup() {
     const chat = useAgnoChat();
@@ -236,11 +239,6 @@ export default defineComponent({
       justify-content: space-between;
       align-items: center;
       cursor: text;
-
-      .tip {
-        font-size: 12px;
-        color: lighten(@text-color, 30%);
-      }
     }
   }
 }

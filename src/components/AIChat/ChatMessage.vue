@@ -1,7 +1,7 @@
 <template>
   <div
     class="chat-message"
-    :class="[`message-${messageType}`, { streaming }]"
+    :class="[`message-${messageType}`]"
   >
     <div class="message-avatar">
       <div
@@ -22,14 +22,6 @@
         <span class="message-name">{{
           isUserMessage ? $t('message.user') : $t('message.ai')
         }}</span>
-        <span
-          v-if="streaming && !isUserMessage"
-          class="streaming-indicator"
-        >
-          <span class="dot" />
-          <span class="dot" />
-          <span class="dot" />
-        </span>
       </div>
       <div
         v-if="thinking"
@@ -50,7 +42,6 @@
         <MarkdownRenderer
           v-else
           :content="content"
-          :streaming="streaming"
         />
       </div>
     </div>
@@ -79,10 +70,6 @@ export default defineComponent({
     thinking: {
       type: String,
       default: '',
-    },
-    streaming: {
-      type: Boolean,
-      default: false,
     },
   },
   computed: {
@@ -123,12 +110,6 @@ export default defineComponent({
         background-color: white;
         border-radius: @border-radius-md @border-radius-md @border-radius-md 0;
       }
-    }
-  }
-
-  &.streaming {
-    .message-body {
-      // min-height: 60px;
     }
   }
 
@@ -176,26 +157,6 @@ export default defineComponent({
         color: @text-color;
       }
 
-      .streaming-indicator {
-        display: flex;
-        gap: 4px;
-
-        .dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background-color: #67c23a;
-          animation: bounce 1.4s infinite ease-in-out both;
-
-          &:nth-child(1) {
-            animation-delay: -0.32s;
-          }
-
-          &:nth-child(2) {
-            animation-delay: -0.16s;
-          }
-        }
-      }
     }
 
     .message-body {
@@ -243,14 +204,4 @@ export default defineComponent({
   }
 }
 
-@keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
 </style>
