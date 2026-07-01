@@ -8,6 +8,7 @@
 <script>
 import { defineComponent } from '@vue/composition-api';
 import DOMPurify from 'dompurify';
+import remend from "remend";
 import { marked } from 'marked';
 import hljs from 'highlight.js/lib/common';
 
@@ -53,6 +54,15 @@ export default defineComponent({
     }
   },
   methods: {
+    getHtml() {
+      const { content } = this;
+      /** 
+       * Avoid flickering by building self-healing markdown content used remend
+       * example: "This is **bold text"
+       * output: "This is **bold text**"
+       */
+      return content ? DOMPurify.sanitize(marked(remend(content))) : '';
+    },
     updateHtml() {
       if (this.htmlRafId) {
         cancelAnimationFrame(this.htmlRafId);
@@ -62,9 +72,8 @@ export default defineComponent({
         this.htmlRafId = null;
         // Optimized for vue2
         // Avoid directly using `v-html` to prevent recursive updates lifecycle. 
-        this.$refs.renderer.innerHTML = this.content
-          ? DOMPurify.sanitize(marked(this.content))
-          : '';
+        // TODO: Progressively append
+        this.$refs.renderer.innerHTML = this.getHtml();
       });
     },
   },
