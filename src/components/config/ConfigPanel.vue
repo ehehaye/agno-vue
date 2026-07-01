@@ -1,5 +1,5 @@
 <template>
-  <div class="model-config-section">
+  <div class="config-panel-section">
     <div class="config-header">
       {{ $t('sidebar.modelConfig') }}
     </div>
@@ -72,7 +72,7 @@ import { defineComponent } from '@vue/composition-api';
 import { useAgnoActions } from '@/hooks/useAgnoActions';
 
 export default defineComponent({
-  name: 'ModelConfig',
+  name: 'ConfigPanel',
   setup() {
     const { config, agents, teams, isStreaming, setConfig, setMode } = useAgnoActions();
 
@@ -89,7 +89,7 @@ export default defineComponent({
 </script>
 
 <style lang="less" scoped>
-.model-config-section {
+.config-panel-section {
   border-top: 1px solid @border-color;
   background-color: #f8f9fa;
 

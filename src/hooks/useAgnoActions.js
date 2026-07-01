@@ -1,5 +1,5 @@
-import { computed, onUnmounted, ref } from '@vue/composition-api';
-import { client } from '@/agno/client';
+import { onUnmounted, ref } from '@vue/composition-api';
+import { client } from '@/utils/client';
 
 /**
  * Hook for common actions like initialization, fetching agents/teams
@@ -145,7 +145,6 @@ export function useAgnoActions() {
     setConfig,
     setMode,
     isInitializing,
-    isStreaming: computed(() => state.value.isStreaming),
     error,
   };
 }

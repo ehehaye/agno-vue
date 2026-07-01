@@ -1,9 +1,8 @@
 <template>
-  <div class="ai-chat">
+  <div class="chat-interface">
     <div
       ref="messageListRef"
       class="chat-messages"
-      @scroll="handleScroll"
     >
       <div
         v-if="messages.length === 0"
@@ -21,35 +20,12 @@
       />
     </div>
 
-    <div class="chat-input-area">
-      <textarea
-        ref="inputRef"
-        v-model="inputText"
-        rows="3"
-        :placeholder="$t('chat.placeholder', { key: isMac ? 'Command + Enter' : 'Alt + Enter' })"
-        @keydown="handleKeydown"
-      />
-      <div class="input-wrapper">
-        <div>
-          <StreamingIndicator
-            v-show="isStreaming"
-          />
-        </div>
-        <button
-          v-if="isStreaming"
-          @click="cancelRun"
-        >
-          {{ $t('chat.stop') }}
-        </button>
-        <button
-          v-else
-          :disabled="!inputText.trim()"
-          @click="handleSend"
-        >
-          {{ $t('chat.send') }}
-        </button>
-      </div>
-    </div>
+    <ChatInput
+      ref="inputRef"
+      v-model="inputText"
+      @cancel="cancelRun"
+      @send="handleSend"
+    />
   </div>
 </template>
 
@@ -57,14 +33,14 @@
 import { defineComponent, nextTick, onMounted, ref, watch } from '@vue/composition-api';
 import { useAgnoChat } from '@/hooks/useAgnoChat';
 import { useAgnoSession } from '@/hooks/useAgnoSession';
-import StreamingIndicator from '@/components/StreamingIndicator.vue';
+import ChatInput from './ChatInput.vue';
 import ChatMessage from './ChatMessage.vue';
 
 export default defineComponent({
-  name: 'AiChat',
+  name: 'ChatInterface',
   components: {
+    ChatInput,
     ChatMessage,
-    StreamingIndicator,
   },
   setup() {
     const chat = useAgnoChat();
@@ -74,9 +50,7 @@ export default defineComponent({
     const inputRef = ref(null);
     const messageListRef = ref(null);
     const inputText = ref('');
-    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const isUserScrolling = ref(false);
-    const scrollTolerance = 50;
 
     const clearInput = () => {
       inputText.value = '';
@@ -101,21 +75,6 @@ export default defineComponent({
     const smartScrollToBottom = () => {
       if (!isUserScrolling.value) {
         scrollToBottom();
-      }
-    };
-
-    const handleScroll = () => {
-      if (!messageListRef.value) return;
-      const { scrollTop, scrollHeight, clientHeight } = messageListRef.value;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight <= scrollTolerance;
-      isUserScrolling.value = !isNearBottom;
-    };
-
-    const handleKeydown = (event) => {
-      if (event.key === 'Enter') {
-        if (isMac ? event.metaKey : event.altKey) {
-          handleSend();
-        }
       }
     };
 
@@ -164,13 +123,10 @@ export default defineComponent({
       inputRef,
       messageListRef,
       inputText,
-      isMac,
       clearInput,
       focusInput,
       scrollToBottom,
       smartScrollToBottom,
-      handleScroll,
-      handleKeydown,
       formatThinking,
       handleSend,
     };
@@ -179,7 +135,7 @@ export default defineComponent({
 </script>
 
 <style lang="less" scoped>
-.ai-chat {
+.chat-interface {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -225,20 +181,6 @@ export default defineComponent({
         margin: 0;
         font-size: 16px;
       }
-    }
-  }
-
-  .chat-input-area {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: @spacing-sm;
-
-    .input-wrapper {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: text;
     }
   }
 }

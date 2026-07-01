@@ -44,7 +44,7 @@ import { useAgnoSession } from '@/hooks/useAgnoSession';
 import { useAgnoActions } from '@/hooks/useAgnoActions';
 
 export default defineComponent({
-  name: 'SessionList',
+  name: 'SessionSidebar',
   setup(_, { root }) {
     const { config } = useAgnoActions();
     const { sessions, currentSessionId, fetchSessions, loadSession, newSession, deleteSession } = useAgnoSession();

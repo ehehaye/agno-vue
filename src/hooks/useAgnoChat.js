@@ -1,5 +1,5 @@
 import { computed, onUnmounted, ref } from '@vue/composition-api';
-import { client } from '@/agno/client';
+import { client } from '@/utils/client';
 
 /**
  * Main hook for chat interactions
