@@ -50,6 +50,17 @@ export default defineComponent({
     const { sessions, currentSessionId, fetchSessions, loadSession, newSession, deleteSession } = useAgnoSession();
 
     const formatTime = (time) => new Date(time).toLocaleString();
+    const formatSessionName = (name) => {
+      // Name is a JSON string during session creation
+      if (name.includes('input_content')) {
+        try {
+          return JSON.parse(name).input_content
+        } catch {
+          return name
+        }
+      }
+      return name
+    };
 
     const handleDelete = async (sessionId) => {
       if (!window.confirm(root.$t('sidebar.deleteConfirm'))) {
@@ -71,6 +82,7 @@ export default defineComponent({
       loadSession,
       newSession,
       formatTime,
+      formatSessionName,
       handleDelete,
     };
   },
