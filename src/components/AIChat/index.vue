@@ -3,14 +3,15 @@
     <div
       ref="messageListRef"
       class="chat-messages"
-      @scroll="handleScroll"
     >
       <div
         v-if="messages.length === 0"
         class="empty-state"
       >
-        <div class="empty-icon">💬</div>
-        <p>开始一段新对话吧</p>
+        <div class="empty-icon">
+          <i class="el-icon-chat-line-round" />
+        </div>
+        <p>Start a new conversation...</p>
       </div>
       <ChatMessage
         v-for="(msg, index) in messages"
@@ -28,19 +29,20 @@
         v-model="inputText"
         type="textarea"
         :rows="3"
-        :placeholder="isMac ? '输入您的问题，按 Command + Enter 发送...' : '输入您的问题，按 Alt + Enter 发送...'"
+        :placeholder="isMac ? 'Type your question, press the Command + Enter to send...' : 'Type your question, press the Alt + Enter to send...'"
         @keydown.native="handleKeydown"
       />
       <div class="input-wrapper">
         <p class="tip">
-          <span>{{ isMac ? 'Command + Enter 发送' : 'Alt + Enter 发送' }}</span>
+          <StreamingIndicator v-show="isStreaming" />
+          <span v-show="!isStreaming">{{ isMac ? 'Command + Enter to send' : 'Alt + Enter to send' }}</span>
         </p>
         <el-button 
           v-if="isStreaming"
           type="primary"
           @click="$agno.cancelRun()"
         >
-          停止
+          Stop
         </el-button>
         <el-button
           v-else
@@ -48,7 +50,7 @@
           :disabled="!inputText.trim()"
           @click="handleSend"
         >
-          发送
+          Send
         </el-button>
       </div>
     </div>
@@ -56,18 +58,20 @@
 </template>
 
 <script>
+import StreamingIndicator from '@/components/common/StreamingIndicator.vue';
 import ChatMessage from './ChatMessage.vue';
+import { client } from '@/agno/client.js';
 
 export default {
   name: 'AiChat',
   components: {
     ChatMessage,
+    StreamingIndicator,
   },
   data() {
     return {
       inputText: '',
       isMac: navigator.platform.toUpperCase().indexOf('MAC') >= 0,
-      isUserScrolling: false,
       scrollTolerance: 50,
     };
   },
@@ -79,20 +83,17 @@ export default {
       return this.$agno.messages;
     },
   },
-  watch: {
-    '$agno.sessionId'() {
-      this.clearInput();
-      this.focusInput();
-    },
-    messages: {
-      handler() {
-        this.smartScrollToBottom();
-      },
-      deep: true,
-    },
-  },
   mounted() {
     this.focusInput();
+    this.$agno.$on('new-session', () => this.focusInput());
+    client.on('session:loaded', this.focusInput);
+    client.on('session:loaded', this.scrollToTop);
+    client.on('message:update', this.scrollToBottom);
+  },
+  beforeDestroy() {
+    client.off('session:loaded', this.focusInput);
+    client.off('session:loaded', this.scrollToTop);
+    client.off('message:update', this.scrollToBottom);
   },
   methods: {
     clearInput() {
@@ -105,25 +106,15 @@ export default {
         }
       });
     },
-    async scrollToBottom() {
-      if (this.$refs.messageListRef) {
-        await this.$nextTick();
-        this.$refs.messageListRef.scrollTo({
-          top: this.$refs.messageListRef.scrollHeight,
-          behavior: 'smooth',
-        })
-      }
+    scrollToTop() {
+      this.$refs.messageListRef.scrollTop = 0
     },
-    smartScrollToBottom() {
-      if (!this.isUserScrolling) {
-        this.scrollToBottom();
-      }
-    },
-    handleScroll() {
-      if (!this.$refs.messageListRef) return;
-      const { scrollTop, scrollHeight, clientHeight } = this.$refs.messageListRef;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight <= this.scrollTolerance;
-      this.isUserScrolling = !isNearBottom;
+    scrollToBottom() {
+      // TODO: safe distance
+      this.$refs.messageListRef.scrollTo({
+        top: this.$refs.messageListRef.scrollHeight,
+        behavior: 'smooth',
+      })
     },
     handleKeydown(event) {
       if (event.key === 'Enter') {
@@ -137,8 +128,8 @@ export default {
       if (!extra_data) return '';
       const { reasoning_content = '', reasoning_messages = [], reasoning_steps = [] } = extra_data
       if (reasoning_content) return reasoning_content;
-      if (reasoning_messages.length) return reasoning_messages.map(step => step.reasoning).join('\n');
-      if (reasoning_steps.length) return reasoning_steps.map(step => step.reasoning).join('\n');
+      if (reasoning_messages.length) return reasoning_messages.map(step => step.reasoning).join('');
+      if (reasoning_steps.length) return reasoning_steps.map(step => step.reasoning).join('');
       return '';
     },
     async handleSend() {

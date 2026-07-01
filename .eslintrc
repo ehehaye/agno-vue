@@ -7,6 +7,7 @@
   },
   "extends": [
     "eslint:recommended",
+    // TODO: vue2 version
     "plugin:vue/vue3-recommended"
   ],
   "parserOptions": {
@@ -15,6 +16,9 @@
   },
   "rules": {
     "vue/multi-word-component-names": "off",
-    "vue/singleline-html-element-content-newline": "off"
+    "vue/singleline-html-element-content-newline": "off",
+    "no-async-promise-executor": "off",
+    "vue/require-explicit-emits": "off",
+    "vue/no-deprecated-destroyed-lifecycle": "off"
   }
 }

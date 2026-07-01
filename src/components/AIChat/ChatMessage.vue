@@ -22,21 +22,13 @@
         <span class="message-name">{{
           type === 'user' ? 'User' : 'AI Assistant'
         }}</span>
-        <span
-          v-if="streaming && type !== 'user'"
-          class="streaming-indicator"
-        >
-          <span class="dot" />
-          <span class="dot" />
-          <span class="dot" />
-        </span>
+        <StreamingIndicator v-show="streaming && type !== 'user'" />
       </div>
       <div
         v-if="thinking"
         class="thinking-section"
       >
         <div class="thinking-header">
-          <span class="thinking-icon">🧐</span>
           <span class="thinking-label">思考中...</span>
         </div>
         <div class="thinking-content">{{ thinking }}</div>
@@ -59,11 +51,13 @@
 
 <script>
 import MarkdownRenderer from '@/components/common/MarkdownRenderer.vue';
+import StreamingIndicator from '@/components/common/StreamingIndicator.vue';
 
 export default {
   name: 'ChatMessage',
   components: {
     MarkdownRenderer,
+    StreamingIndicator,
   },
   props: {
     type: {
@@ -82,15 +76,6 @@ export default {
     streaming: {
       type: Boolean,
       default: false,
-    },
-  },
-  computed: {
-    formattedContent() {
-      return this.content
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\n/g, '<br>');
     },
   },
 };
@@ -177,27 +162,6 @@ export default {
         font-size: 14px;
         color: @text-color;
       }
-
-      .streaming-indicator {
-        display: flex;
-        gap: 4px;
-
-        .dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background-color: #67c23a;
-          animation: bounce 1.4s infinite ease-in-out both;
-
-          &:nth-child(1) {
-            animation-delay: -0.32s;
-          }
-
-          &:nth-child(2) {
-            animation-delay: -0.16s;
-          }
-        }
-      }
     }
 
     .message-body {
@@ -228,10 +192,6 @@ export default {
         color: #e6a23c;
         font-weight: 600;
 
-        .thinking-icon {
-          font-size: 16px;
-        }
-
         .thinking-label {
           font-size: 13px;
         }
@@ -242,17 +202,6 @@ export default {
         white-space: pre-wrap;
       }
     }
-  }
-}
-
-@keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
   }
 }
 </style>
