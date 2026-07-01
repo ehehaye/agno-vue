@@ -1,7 +1,7 @@
 <template>
   <div class="markdown-renderer">
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <div v-html="displayedHtml" />
+    <div ref="renderer" />
   </div>
 </template>
 
@@ -32,7 +32,6 @@ export default defineComponent({
   },
   data() {
     return {
-      displayedHtml: '',
       htmlRafId: null,
       pendingUpdate: false,
     };
@@ -60,7 +59,10 @@ export default defineComponent({
       }
       this.htmlRafId = requestAnimationFrame(() => {
         this.pendingUpdate = false;
-        this.displayedHtml = this.content
+        this.htmlRafId = null;
+        // Optimized for vue2
+        // Avoid directly using `v-html` to prevent recursive updates lifecycle. 
+        this.$refs.renderer.innerHTML = this.content
           ? DOMPurify.sanitize(marked(this.content))
           : '';
       });
