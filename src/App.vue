@@ -1,9 +1,5 @@
 <template>
   <AppLayout>
-    <template #header>
-      <h1>Agno-Vue</h1>
-    </template>
-
     <template #aside>
       <div
         v-if="done"
@@ -98,6 +94,27 @@ export default defineComponent({
     padding: @spacing-xl;
     text-align: center;
     color: @text-color;
+    background: fade(@surface-color, 88%);
+    border: 1px solid fade(@border-color, 72%);
+    border-radius: @border-radius-xl;
+    box-shadow: @shadow-md;
+    backdrop-filter: blur(18px);
+  }
+
+  .init-loading {
+    position: relative;
+
+    &::before {
+      content: '';
+      display: block;
+      width: 36px;
+      height: 36px;
+      margin: 0 auto @spacing-md;
+      border: 3px solid fade(@primary-color, 18%);
+      border-top-color: @primary-color;
+      border-radius: 50%;
+      animation: spin 0.86s linear infinite;
+    }
   }
 
   .init-error {
@@ -115,10 +132,17 @@ export default defineComponent({
 }
 
 .chat-sidebar {
-  height: calc(100vh - @header-height);
+  height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f5f7fa;
-  border-right: 1px solid @border-color;
+  background:
+    linear-gradient(180deg, fade(@surface-color, 72%) 0%, fade(@surface-muted, 80%) 100%);
+  border-right: 1px solid fade(@border-color, 66%);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

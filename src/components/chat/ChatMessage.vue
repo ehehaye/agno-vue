@@ -1,6 +1,6 @@
 <template>
   <div
-    class="chat-message"
+    class="chat-message hover-lift"
     :class="[`message-${messageType}`]"
   >
     <div class="message-avatar">
@@ -33,7 +33,7 @@
         </div>
         <div class="thinking-content">{{ thinking }}</div>
       </div>
-      <div class="message-body">
+      <div class="message-body hover-lift">
         <div
           v-if="isUserMessage"
           class="user-message"
@@ -87,8 +87,15 @@ export default defineComponent({
 .chat-message {
   display: flex;
   gap: @spacing-md;
-  padding: @spacing-md;
-  border-radius: @border-radius-md;
+  padding: @spacing-sm;
+  border-radius: @border-radius-lg;
+  transition:
+    background-color @transition-fast,
+    transform @transition-base;
+
+  &:hover {
+    background-color: fade(@surface-color, 54%);
+  }
 
   &.message-user {
     flex-direction: row-reverse;
@@ -97,18 +104,24 @@ export default defineComponent({
       align-items: flex-end;
 
       .message-body {
-        background-color: @primary-color;
+        background: linear-gradient(135deg, @primary-hover 0%, @primary-color 100%);
         color: white;
-        border-radius: @border-radius-md @border-radius-md 0 @border-radius-md;
+        border-radius: @border-radius-lg @border-radius-lg @border-radius-sm @border-radius-lg;
+        box-shadow: 0 12px 26px rgba(63, 126, 232, 0.24);
       }
+    }
+
+    .message-name {
+      color: fade(@primary-active, 84%);
     }
   }
 
   &.message-ai {
     .message-content {
       .message-body {
-        background-color: white;
-        border-radius: @border-radius-md @border-radius-md @border-radius-md 0;
+        background: fade(@surface-color, 92%);
+        border: 1px solid fade(@border-color, 62%);
+        border-radius: @border-radius-lg @border-radius-lg @border-radius-lg @border-radius-sm;
       }
     }
   }
@@ -117,23 +130,33 @@ export default defineComponent({
     flex-shrink: 0;
 
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      box-shadow: @shadow-sm;
+      transition:
+        transform @transition-base,
+        box-shadow @transition-base;
+    }
+
+    .avatar:hover {
+      transform: scale(1.06) rotate(-2deg);
+      box-shadow: @shadow-md;
     }
 
     .user-avatar {
-      background-color: @primary-color;
+      background: linear-gradient(135deg, @primary-hover, @primary-color);
       color: white;
     }
 
     .ai-avatar {
-      background-color: #67c23a;
+      background: linear-gradient(135deg, #8add66, @success-color);
       color: white;
     }
   }
@@ -154,15 +177,22 @@ export default defineComponent({
       .message-name {
         font-weight: 600;
         font-size: 14px;
-        color: @text-color;
+        color: @text-secondary;
       }
 
     }
 
     .message-body {
       line-height: 1.6;
-      padding: @spacing-sm @spacing-md;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      padding: @spacing-md;
+      box-shadow: @shadow-sm;
+      transition:
+        box-shadow @transition-base,
+        transform @transition-base;
+
+      &:hover {
+        box-shadow: @shadow-md;
+      }
 
       .user-message {
         word-break: break-word;
@@ -170,14 +200,16 @@ export default defineComponent({
     }
 
     .thinking-section {
-      background-color: #f8f8f8;
-      border-radius: @border-radius-md;
+      background: linear-gradient(135deg, rgba(255, 250, 235, 0.92), rgba(255, 255, 255, 0.9));
+      border-radius: @border-radius-lg;
       padding: @spacing-sm @spacing-md;
       margin-bottom: @spacing-sm;
       font-size: 14px;
       line-height: 1.6;
-      color: lighten(@text-color, 10%);
-      border-left: 3px solid #e6a23c;
+      color: @text-secondary;
+      border: 1px solid fade(@warning-color, 28%);
+      border-left: 3px solid @warning-color;
+      box-shadow: 0 8px 22px rgba(230, 162, 60, 0.12);
 
       .thinking-header {
         display: flex;
@@ -197,11 +229,10 @@ export default defineComponent({
       }
 
       .thinking-content {
-        color: lighten(@text-color, 5%);
+        color: @text-color;
         white-space: pre-wrap;
       }
     }
   }
 }
-
 </style>

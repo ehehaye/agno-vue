@@ -13,9 +13,12 @@
       <div
         v-for="(session) in sessions"
         :key="session.session_id"
-        class="session-item"
+        class="session-item hover-lift"
         :class="{ active: session.session_id === currentSessionId }"
+        tabindex="0"
         @click="loadSession(session.session_id)"
+        @keydown.enter.prevent="loadSession(session.session_id)"
+        @keydown.space.prevent="loadSession(session.session_id)"
       >
         <div class="session-content">
           <div class="session-title">{{ session.session_name }}</div>
@@ -95,6 +98,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   padding: @spacing-md;
+  padding-top: 12px;
   min-height: 0;
 
   .section-header {
@@ -125,31 +129,49 @@ export default defineComponent({
     flex: 1;
     display: flex;
     flex-direction: column;
+    padding-top: 2px;
     gap: @spacing-xs;
     overflow-y: auto;
     min-height: 0;
 
     .session-item {
-      padding: @spacing-sm @spacing-md;
+      position: relative;
+      padding: 10px 12px;
       border-radius: @border-radius-md;
       cursor: pointer;
-      transition: all 0.3s;
-      border: 1px solid transparent;
+      transition:
+        transform @transition-fast,
+        background-color @transition-base,
+        border-color @transition-fast,
+        box-shadow @transition-base;
+      border: 1px solid fade(@border-color, 68%);
+      background-color: fade(@surface-color, 58%);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      outline: none;
 
       &:hover {
-        background-color: #e6f7ff;
+        background-color: @surface-hover;
+        border-color: fade(@primary-color, 32%);
+        box-shadow: 0 10px 24px rgba(63, 126, 232, 0.12);
       }
 
       &.active {
-        background-color: #e6f7ff;
-        border-color: @primary-color;
+        background: linear-gradient(135deg, fade(@primary-color, 14%), fade(@primary-hover, 8%));
+        border-color: fade(@primary-color, 58%);
+        box-shadow: inset 3px 0 0 @primary-color, 0 8px 20px rgba(63, 126, 232, 0.12);
       }
 
-      &:hover .delete-btn {
+      &:focus-visible {
+        border-color: fade(@primary-color, 70%);
+        box-shadow: @focus-shadow, 0 10px 24px rgba(63, 126, 232, 0.12);
+      }
+
+      &:hover .delete-btn,
+      &:focus-within .delete-btn {
         opacity: 1;
+        transform: scale(1);
       }
 
       .session-content {
@@ -175,14 +197,42 @@ export default defineComponent({
 
       .delete-btn {
         opacity: 0;
-        transition: opacity 0.3s;
+        transform: scale(0.86);
+        transition:
+          opacity @transition-fast,
+          transform @transition-fast,
+          background-color @transition-fast,
+          color @transition-fast,
+          box-shadow @transition-base;
         padding: 0;
-        width: 24px;
-        height: 24px;
+        width: 26px;
+        height: 26px;
         border-radius: 50%;
         border-color: transparent;
-        background-color: transparent;
+        background: fade(@error-color, 10%);
         color: @error-color;
+        box-shadow: none;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background: @error-color;
+          color: #fff;
+          box-shadow: 0 8px 18px fade(@error-color, 28%);
+        }
+
+        &:active {
+          transform: scale(0.94);
+          box-shadow: none;
+        }
+
+        &:focus-visible {
+          opacity: 1;
+          transform: scale(1);
+          box-shadow: 0 0 0 4px fade(@error-color, 18%);
+        }
       }
     }
 

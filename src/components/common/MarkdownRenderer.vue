@@ -1,6 +1,5 @@
 <template>
   <div class="markdown-renderer">
-    <!-- eslint-disable-next-line vue/no-v-html -->
     <div ref="renderer" />
   </div>
 </template>
@@ -13,7 +12,7 @@ import { marked } from 'marked';
 import hljs from 'highlight.js/lib/common';
 
 marked.setOptions({
-  highlight: function (code, lang) {
+  highlight (code, lang) {
     if (lang && hljs.getLanguage(lang)) {
       return hljs.highlight(code, { language: lang }).value;
     }

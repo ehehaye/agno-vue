@@ -17,14 +17,20 @@ export default defineComponent({
 <style lang="less" scoped>
 .streaming-indicator {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: fade(@success-color, 10%);
+  border: 1px solid fade(@success-color, 18%);
 
   .dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background-color: #67c23a;
-    animation: bounce 1.4s infinite ease-in-out both;
+    background: linear-gradient(135deg, #8add66, @success-color);
+    box-shadow: 0 0 10px fade(@success-color, 45%);
+    animation: bounce 1.2s infinite ease-in-out both;
 
     &:nth-child(1) {
       animation-delay: -0.32s;

@@ -3,15 +3,12 @@
     <textarea
       ref="textareaRef"
       :value="value"
-      rows="3"
+      rows="2"
       :placeholder="$t('chat.placeholder', { key: isMac ? 'Command + Enter' : 'Alt + Enter' })"
       @input="handleInput"
       @keydown="handleKeydown"
     />
-    <div class="input-wrapper">
-      <div>
-        <StreamingIndicator v-show="isStreaming" />
-      </div>
+    <div class="input-actions">
       <button
         v-if="isStreaming"
         @click="$emit('cancel')"
@@ -25,6 +22,9 @@
       >
         {{ $t('chat.send') }}
       </button>
+      <div class="indicator-slot">
+        <StreamingIndicator v-show="isStreaming" />
+      </div>
     </div>
   </div>
 </template>
@@ -80,14 +80,56 @@ export default defineComponent({
 .chat-input-area {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  gap: @spacing-sm;
+  align-items: stretch;
+  gap: @spacing-md;
+  padding: @spacing-md;
+  border: 1px solid fade(@border-color, 72%);
+  border-radius: @border-radius-xl;
+  background: fade(@surface-color, 88%);
+  box-shadow: @shadow-md;
+  backdrop-filter: blur(18px);
+  transition:
+    border-color @transition-fast,
+    box-shadow @transition-base,
+    transform @transition-base;
 
-  .input-wrapper {
+  &:focus-within {
+    border-color: fade(@primary-color, 58%);
+    box-shadow: @focus-shadow, @shadow-lg;
+    transform: translateY(-2px);
+  }
+
+  textarea {
+    flex: 1;
+    border-color: transparent;
+    background:
+      linear-gradient(180deg, fade(@surface-muted, 72%), fade(@surface-color, 92%));
+
+    &:focus {
+      border-color: fade(@primary-color, 48%);
+    }
+  }
+
+  .input-actions {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
-    cursor: text;
+    gap: @spacing-sm;
+    flex-shrink: 0;
+
+    button {
+      min-width: 86px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .indicator-slot {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 27px;
+    }
   }
 }
 </style>

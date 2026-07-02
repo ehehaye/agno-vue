@@ -90,27 +90,33 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .config-panel-section {
-  border-top: 1px solid @border-color;
-  background-color: #f8f9fa;
+  margin: 0 @spacing-md @spacing-md;
+  border: 1px solid fade(@border-color, 72%);
+  border-radius: @border-radius-xl;
+  background: fade(@surface-color, 74%);
+  box-shadow: @shadow-sm;
+  overflow: hidden;
 
   .config-header {
     padding: @spacing-md;
     font-size: 14px;
     font-weight: 600;
     color: @text-color;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid @border-color;
+    background:
+      linear-gradient(135deg, fade(@primary-hover, 12%), fade(@surface-color, 86%));
+    border-bottom: 1px solid fade(@border-color, 64%);
   }
 
   .config-content {
-    padding: @spacing-sm @spacing-md;
+    padding: @spacing-md;
   }
 
   .form-item {
     display: flex;
     flex-direction: row;
-    align-items: baseline;
+    align-items: center;
     margin-bottom: @spacing-md;
+    gap: @spacing-sm;
 
     &:last-child {
       margin-bottom: 0;
@@ -119,18 +125,22 @@ export default defineComponent({
     .form-label {
       display: block;
       font-size: 14px;
-      color: @text-color;
-      margin-bottom: @spacing-sm;
-      margin-right: @spacing-sm;
+      color: @text-secondary;
+      margin-bottom: 0;
+      margin-right: 0;
       width: 60px;
+      font-weight: 600;
     }
 
     .form-select {
       width: 100%;
-      padding: 8px;
+      min-width: 0;
+      padding: 9px 10px;
       font-size: 14px;
-      background-color: white;
+      background-color: fade(@surface-color, 90%);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.82);
     }
   }
 }
+
 </style>

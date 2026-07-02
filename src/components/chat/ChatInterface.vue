@@ -162,7 +162,13 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     gap: @spacing-md;
-    padding: @spacing-sm;
+    padding: @spacing-md;
+    border: 1px solid fade(@border-color, 72%);
+    border-radius: @border-radius-xl;
+    background:
+      linear-gradient(180deg, fade(@surface-color, 80%) 0%, fade(@surface-muted, 72%) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), @shadow-sm;
+    scroll-behavior: smooth;
 
     .empty-state {
       flex: 1;
@@ -170,18 +176,46 @@ export default defineComponent({
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: lighten(@text-color, 20%);
+      color: @text-secondary;
+      animation: empty-state-in 0.52s @transition-base;
 
       .empty-icon {
         font-size: 48px;
         margin-bottom: @spacing-md;
+        filter: drop-shadow(0 12px 20px rgba(63, 126, 232, 0.2));
+        animation: empty-icon-float 2.8s ease-in-out infinite;
       }
 
       p {
         margin: 0;
         font-size: 16px;
+        padding: @spacing-sm @spacing-md;
+        border-radius: 999px;
+        background-color: fade(@surface-color, 72%);
+        border: 1px solid fade(@border-color, 58%);
       }
     }
+  }
+}
+
+@keyframes empty-state-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes empty-icon-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
   }
 }
 </style>

@@ -64,8 +64,11 @@ export function useAgnoChat() {
   /**
    * Send a message to the agent/team
    */
-  const sendMessage = async (message, options) => {
-    await client.sendMessage(message, options);
+  const sendMessage = async (message, options = {}) => {
+    await client.sendMessage(message, {
+      background: true,
+      ...options
+    });
   };
 
   /**

@@ -10,11 +10,48 @@
 html,
 body {
   height: 100%;
-  background-color: @bg-color;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(90, 149, 245, 0.22), transparent 32%),
+    radial-gradient(circle at 88% 8%, rgba(103, 194, 58, 0.16), transparent 28%),
+    linear-gradient(135deg, #f8fbff 0%, @bg-color 48%, #f7fbff 100%);
   font-family: @font-family;
   color: @text-color;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 #app {
   height: 100%;
+}
+
+::selection {
+  color: #fff;
+  background-color: fade(@primary-color, 78%);
+}
+
+.hover-lift {
+  transition: transform @transition-fast;
+
+  &:hover:not([disabled]) {
+    transform: translateY(-1px);
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: fade(@primary-color, 34%) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, fade(@primary-hover, 54%), fade(@primary-color, 34%));
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
