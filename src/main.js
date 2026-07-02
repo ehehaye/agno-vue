@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import VueCompositionApi from '@vue/composition-api';
+import '@/interceptors';
 import App from '@/App.vue';
 import './assets/styles/main.less';
 import i18n from '@/lang';
