@@ -13,6 +13,7 @@ export default {
     cancel: 'Cancel',
     deleteConfirm: 'Are you sure you want to delete this session?',
     prompt: 'Prompt',
+    agent: 'Agent',
   },
   chat: {
     emptyState: 'Start a new conversation',

@@ -17,6 +17,7 @@
         :type="msg.role"
         :content="msg.content"
         :thinking="formatThinking(msg)"
+        :streaming="index === messages.length - 1 && isStreaming"
       />
     </div>
 
@@ -164,7 +165,7 @@ export default defineComponent({
     gap: @spacing-md;
     padding: @spacing-md;
     border: 1px solid fade(@border-color, 72%);
-    border-radius: @border-radius-xl;
+    border-radius: @border-radius-xl 8px 8px @border-radius-xl;
     background:
       linear-gradient(180deg, fade(@surface-color, 80%) 0%, fade(@surface-muted, 72%) 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), @shadow-sm;

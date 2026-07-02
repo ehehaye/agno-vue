@@ -33,7 +33,10 @@
         </div>
         <div class="thinking-content">{{ thinking }}</div>
       </div>
-      <div class="message-body hover-lift">
+      <div
+        v-if="content"
+        class="message-body hover-lift"
+      >
         <div
           v-if="isUserMessage"
           class="user-message"
@@ -44,6 +47,10 @@
           :content="content"
         />
       </div>
+      <StreamingIndicator
+        v-else-if="streaming"
+        :style="{ width: '60px' }"
+      />
     </div>
   </div>
 </template>
@@ -51,11 +58,13 @@
 <script>
 import { defineComponent } from '@vue/composition-api';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer.vue';
+import StreamingIndicator from '@/components/common/StreamingIndicator.vue';
 
 export default defineComponent({
   name: 'ChatMessage',
   components: {
     MarkdownRenderer,
+    StreamingIndicator,
   },
   props: {
     type: {
@@ -70,6 +79,10 @@ export default defineComponent({
     thinking: {
       type: String,
       default: '',
+    },
+    streaming: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {

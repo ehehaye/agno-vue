@@ -28,7 +28,7 @@
       </div>
 
       <div class="form-item">
-        <label class="form-label">{{ config.mode === 'agent' ? 'AGENT' : 'TEAM' }}</label>
+        <label class="form-label">{{ $t('sidebar.agent') }}</label>
         <template v-if="config.mode === 'agent'">
           <select
             v-model="config.agentId"

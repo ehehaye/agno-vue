@@ -13,6 +13,7 @@ export default {
     cancel: '取消',
     deleteConfirm: '确定要删除这个会话吗？',
     prompt: '提示',
+    agent: '智能体',
   },
   chat: {
     emptyState: '开始一段新对话吧',
