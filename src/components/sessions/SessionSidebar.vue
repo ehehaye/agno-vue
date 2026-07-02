@@ -9,35 +9,39 @@
         +
       </button>
     </div>
-    <div class="sessions-list">
-      <div
-        v-for="(session) in sessions"
-        :key="session.session_id"
-        class="session-item hover-lift"
-        :class="{ active: session.session_id === currentSessionId }"
-        tabindex="0"
-        @click="loadSession(session.session_id)"
-        @keydown.enter.prevent="loadSession(session.session_id)"
-        @keydown.space.prevent="loadSession(session.session_id)"
-      >
-        <div class="session-content">
-          <div class="session-title">{{ session.session_name }}</div>
-          <div class="session-time">{{ formatTime(session.created_at) }}</div>
-        </div>
-        <button
-          class="delete-btn"
-          @click.stop="handleDelete(session.session_id)"
+    <VirtualScrollList
+      class="sessions-list"
+      :items="sessions"
+      :item-height="sessionItemHeight"
+      item-key="session_id"
+    >
+      <template #default="{ item: session }">
+        <div
+          class="session-item hover-lift"
+          :class="{ active: session.session_id === currentSessionId }"
+          tabindex="0"
+          @click="loadSession(session.session_id)"
+          @keydown.enter.prevent="loadSession(session.session_id)"
+          @keydown.space.prevent="loadSession(session.session_id)"
         >
-          x
-        </button>
-      </div>
-      <div
-        v-if="!sessions.length"
-        class="empty-state"
-      >
-        <p>{{ $t('sidebar.noSessions') }}</p>
-      </div>
-    </div>
+          <div class="session-content">
+            <div class="session-title">{{ formatSessionName(session.session_name) }}</div>
+            <div class="session-time">{{ formatTime(session.created_at) }}</div>
+          </div>
+          <button
+            class="delete-btn"
+            @click.stop="handleDelete(session.session_id)"
+          >
+            x
+          </button>
+        </div>
+      </template>
+      <template #empty>
+        <div class="empty-state">
+          <p>{{ $t('sidebar.noSessions') }}</p>
+        </div>
+      </template>
+    </VirtualScrollList>
   </div>
 </template>
 
@@ -45,15 +49,24 @@
 import { defineComponent, watch } from '@vue/composition-api';
 import { useAgnoSession } from '@/hooks/useAgnoSession';
 import { useAgnoActions } from '@/hooks/useAgnoActions';
+import VirtualScrollList from '@/components/common/VirtualScrollList.vue';
 
 export default defineComponent({
   name: 'SessionSidebar',
+  components: {
+    VirtualScrollList,
+  },
   setup(_, { root }) {
     const { config } = useAgnoActions();
     const { sessions, currentSessionId, fetchSessions, loadSession, newSession, deleteSession } = useAgnoSession();
+    const sessionItemHeight = 64;
 
     const formatTime = (time) => new Date(time).toLocaleString();
     const formatSessionName = (name) => {
+      if (typeof name !== 'string') {
+        return name || '';
+      }
+
       // Name is a JSON string during session creation
       if (name.includes('input_content')) {
         try {
@@ -75,13 +88,17 @@ export default defineComponent({
 
     watch(
       config,
-      fetchSessions,
+      () => {
+        fetchSessions()
+        newSession()
+      },
       { immediate: true }
     );
 
     return {
       sessions,
       currentSessionId,
+      sessionItemHeight,
       loadSession,
       newSession,
       formatTime,
@@ -127,15 +144,16 @@ export default defineComponent({
 
   .sessions-list {
     flex: 1;
-    display: flex;
-    flex-direction: column;
     padding-top: 2px;
-    gap: @spacing-xs;
-    overflow-y: auto;
     min-height: 0;
 
     .session-item {
       position: relative;
+      box-sizing: border-box;
+      // 1px for hover transform
+      height: calc(100% - @spacing-xs - 1px);
+      margin-top: 1px;
+      margin-bottom: @spacing-xs;
       padding: 10px 12px;
       border-radius: @border-radius-md;
       cursor: pointer;
@@ -237,7 +255,7 @@ export default defineComponent({
     }
 
     .empty-state {
-      flex: 1;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
