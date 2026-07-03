@@ -2,16 +2,15 @@
   <div class="chat-input-area">
     <textarea
       ref="textareaRef"
-      :value="value"
+      v-model="value"
       rows="2"
       :style="{ resize: 'none' }"
       :placeholder="$t('chat.placeholder', { key: isMac ? 'Command + Enter' : 'Alt + Enter' })"
-      @input="handleInput"
       @keydown="handleKeydown"
     />
     <div class="input-actions">
       <button
-        v-if="isStreaming"
+        v-if="streaming"
         @click="$emit('cancel')"
       >
         {{ $t('chat.stop') }}
@@ -19,21 +18,20 @@
       <button
         v-else
         :disabled="!value.trim()"
-        @click="$emit('send')"
+        @click="send"
       >
         {{ $t('chat.send') }}
       </button>
       <div class="indicator-slot">
-        <StreamingIndicator v-show="isStreaming" />
+        <StreamingIndicator v-show="streaming" />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, ref, onMounted } from '@vue/composition-api';
 import StreamingIndicator from '@/components/common/StreamingIndicator.vue';
-import { useAgnoChat } from '@/hooks/useAgnoChat';
 import { isMac } from '@/utils/ua';
 
 export default defineComponent({
@@ -42,36 +40,43 @@ export default defineComponent({
     StreamingIndicator,
   },
   props: {
-    value: {
-      type: String,
-      default: '',
+    streaming: {
+      type: Boolean,
+      default: false,
     },
   },
   setup(props, { emit }) {
-    const { isStreaming } = useAgnoChat();
     const textareaRef = ref(null);
+    const value = ref('')
 
+    // TODO: caller
     const focus = () => {
       textareaRef.value?.focus?.();
     };
 
-    const handleInput = (event) => {
-      emit('input', event.target.value);
+    const send = () => {
+      const text = value.value
+      emit('send', text);
+      value.value = '';
     };
 
     const handleKeydown = (event) => {
       if (event.key === 'Enter' && (isMac ? event.metaKey : event.altKey)) {
-        emit('send');
+        send();
       }
     };
 
+    onMounted(() => {
+      focus();
+    });
+
     return {
+      value,
       isMac,
-      isStreaming,
       textareaRef,
       focus,
-      handleInput,
       handleKeydown,
+      send,
     };
   },
 });

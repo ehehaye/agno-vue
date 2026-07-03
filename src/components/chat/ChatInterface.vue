@@ -25,9 +25,8 @@
       </StickToBottom>
     </div>
 
-    <ChatInput
-      ref="inputRef"
-      v-model="inputText"
+    <Sender
+      :streaming="isStreaming"
       @cancel="cancelRun"
       @send="handleSend"
     />
@@ -35,17 +34,17 @@
 </template>
 
 <script>
-import { defineComponent, nextTick, onMounted, ref } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api';
 import { useAgnoChat } from '@/hooks/useAgnoChat';
 import { useAgnoSession } from '@/hooks/useAgnoSession';
-import ChatInput from './ChatInput.vue';
-import ChatMessage from './ChatMessage.vue';
+import Sender from '@/components/ai/Sender.vue';
 import StickToBottom from '@/components/ai/StickToBottom.vue';
+import ChatMessage from './ChatMessage.vue';
 
 export default defineComponent({
   name: 'ChatInterface',
   components: {
-    ChatInput,
+    Sender,
     ChatMessage,
     StickToBottom,
   },
@@ -53,19 +52,7 @@ export default defineComponent({
     const chat = useAgnoChat();
     const { messages, sendMessage } = chat;
     const { currentSessionId } = useAgnoSession();
-
-    const inputRef = ref(null);
-    const inputText = ref('');
-
-    const clearInput = () => {
-      inputText.value = '';
-    };
-
-    const focusInput = () => {
-      nextTick(() => {
-        inputRef.value?.focus?.();
-      });
-    };
+    const { isStreaming } = useAgnoChat();
 
     const formatThinking = (msg) => {
       const { extra_data } = msg;
@@ -77,24 +64,15 @@ export default defineComponent({
       return '';
     };
 
-    const handleSend = async () => {
-      const text = inputText.value;
-      clearInput();
+    const handleSend = async (text) => {
       await sendMessage(text);
     };
 
-    onMounted(() => {
-      focusInput();
-    });
-
     return {
       ...chat,
+      isStreaming,
       messages,
       currentSessionId,
-      inputRef,
-      inputText,
-      clearInput,
-      focusInput,
       formatThinking,
       handleSend,
     };

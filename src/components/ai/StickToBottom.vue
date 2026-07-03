@@ -49,6 +49,7 @@ export default defineComponent({
           restart();
         }
 
+        // Append chunk to last message
         if (isManualScrolling.value || isManuallyMovedToSafeArea.value) {
           cancelNextScroll();
         } else {
