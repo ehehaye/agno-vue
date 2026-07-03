@@ -3,20 +3,7 @@
     class="chat-message hover-lift"
     :class="[`message-${messageType}`]"
   >
-    <div class="message-avatar">
-      <div
-        v-if="isUserMessage"
-        class="avatar user-avatar"
-      >
-        <span>User</span>
-      </div>
-      <div
-        v-else
-        class="avatar ai-avatar"
-      >
-        <span>AI</span>
-      </div>
-    </div>
+    <MessageAvatar :type="messageType" />
     <div class="message-content">
       <div class="message-header">
         <span class="message-name">{{
@@ -33,9 +20,9 @@
         </div>
         <div class="thinking-content">{{ thinking }}</div>
       </div>
-      <div
+      <MessageBubble
         v-if="content"
-        class="message-body hover-lift"
+        :type="messageType"
       >
         <div
           v-if="isUserMessage"
@@ -46,7 +33,7 @@
           v-else
           :content="content"
         />
-      </div>
+      </MessageBubble>
       <StreamingIndicator
         v-else-if="streaming"
         :style="{ width: '60px' }"
@@ -59,11 +46,15 @@
 import { defineComponent } from '@vue/composition-api';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer.vue';
 import StreamingIndicator from '@/components/common/StreamingIndicator.vue';
+import MessageAvatar from '@/components/ai/MessageAvatar.vue';
+import MessageBubble from '@/components/ai/MessageBubble.vue';
 
 export default defineComponent({
   name: 'ChatMessage',
   components: {
     MarkdownRenderer,
+    MessageAvatar,
+    MessageBubble,
     StreamingIndicator,
   },
   props: {
@@ -102,6 +93,7 @@ export default defineComponent({
   gap: @spacing-md;
   padding: @spacing-sm;
   border-radius: @border-radius-lg;
+  content-visibility: auto;
   transition:
     background-color @transition-fast,
     transform @transition-base;
@@ -115,62 +107,10 @@ export default defineComponent({
 
     .message-content {
       align-items: flex-end;
-
-      .message-body {
-        background: linear-gradient(135deg, @primary-hover 0%, @primary-color 100%);
-        color: white;
-        border-radius: @border-radius-lg @border-radius-lg @border-radius-sm @border-radius-lg;
-        box-shadow: 0 12px 26px rgba(63, 126, 232, 0.24);
-      }
     }
 
     .message-name {
       color: fade(@primary-active, 84%);
-    }
-  }
-
-  &.message-ai {
-    .message-content {
-      .message-body {
-        background: fade(@surface-color, 92%);
-        border: 1px solid fade(@border-color, 62%);
-        border-radius: @border-radius-lg @border-radius-lg @border-radius-lg @border-radius-sm;
-      }
-    }
-  }
-
-  .message-avatar {
-    flex-shrink: 0;
-
-    .avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 13px;
-      letter-spacing: 0.02em;
-      box-shadow: @shadow-sm;
-      transition:
-        transform @transition-base,
-        box-shadow @transition-base;
-    }
-
-    .avatar:hover {
-      transform: scale(1.06) rotate(-2deg);
-      box-shadow: @shadow-md;
-    }
-
-    .user-avatar {
-      background: linear-gradient(135deg, @primary-hover, @primary-color);
-      color: white;
-    }
-
-    .ai-avatar {
-      background: linear-gradient(135deg, #8add66, @success-color);
-      color: white;
     }
   }
 
@@ -193,23 +133,6 @@ export default defineComponent({
         color: @text-secondary;
       }
 
-    }
-
-    .message-body {
-      line-height: 1.6;
-      padding: @spacing-md;
-      box-shadow: @shadow-sm;
-      transition:
-        box-shadow @transition-base,
-        transform @transition-base;
-
-      &:hover {
-        box-shadow: @shadow-md;
-      }
-
-      .user-message {
-        word-break: break-word;
-      }
     }
 
     .thinking-section {

@@ -1,7 +1,6 @@
 <template>
   <div class="chat-interface">
     <div
-      ref="messageListRef"
       class="chat-messages"
     >
       <div
@@ -11,14 +10,19 @@
         <div class="empty-icon">💬</div>
         <p>{{ $t('chat.emptyState') }}</p>
       </div>
-      <ChatMessage
-        v-for="(msg, index) in messages"
-        :key="index"
-        :type="msg.role"
-        :content="msg.content"
-        :thinking="formatThinking(msg)"
-        :streaming="index === messages.length - 1 && isStreaming"
-      />
+      <StickToBottom
+        v-else
+        :messages="messages"
+      >
+        <ChatMessage
+          v-for="(msg, index) in messages"
+          :key="index"
+          :type="msg.role"
+          :content="msg.content"
+          :thinking="formatThinking(msg)"
+          :streaming="index === messages.length - 1 && isStreaming"
+        />
+      </StickToBottom>
     </div>
 
     <ChatInput
@@ -31,17 +35,19 @@
 </template>
 
 <script>
-import { defineComponent, nextTick, onMounted, ref, watch } from '@vue/composition-api';
+import { defineComponent, nextTick, onMounted, ref } from '@vue/composition-api';
 import { useAgnoChat } from '@/hooks/useAgnoChat';
 import { useAgnoSession } from '@/hooks/useAgnoSession';
 import ChatInput from './ChatInput.vue';
 import ChatMessage from './ChatMessage.vue';
+import StickToBottom from '@/components/ai/StickToBottom.vue';
 
 export default defineComponent({
   name: 'ChatInterface',
   components: {
     ChatInput,
     ChatMessage,
+    StickToBottom,
   },
   setup() {
     const chat = useAgnoChat();
@@ -49,9 +55,7 @@ export default defineComponent({
     const { currentSessionId } = useAgnoSession();
 
     const inputRef = ref(null);
-    const messageListRef = ref(null);
     const inputText = ref('');
-    const isUserScrolling = ref(false);
 
     const clearInput = () => {
       inputText.value = '';
@@ -61,22 +65,6 @@ export default defineComponent({
       nextTick(() => {
         inputRef.value?.focus?.();
       });
-    };
-
-    const scrollToBottom = async () => {
-      if (messageListRef.value) {
-        await nextTick();
-        messageListRef.value.scrollTo({
-          top: messageListRef.value.scrollHeight,
-          behavior: 'smooth',
-        });
-      }
-    };
-
-    const smartScrollToBottom = () => {
-      if (!isUserScrolling.value) {
-        scrollToBottom();
-      }
     };
 
     const formatThinking = (msg) => {
@@ -90,29 +78,10 @@ export default defineComponent({
     };
 
     const handleSend = async () => {
-      const text = inputText.value.trim();
-      if (!text) return;
-      try {
-        clearInput();
-        await scrollToBottom();
-        await sendMessage(text);
-      } finally {
-        await scrollToBottom();
-      }
-    };
-
-    watch(currentSessionId, () => {
+      const text = inputText.value;
       clearInput();
-      focusInput();
-    });
-
-    watch(
-      messages,
-      () => {
-        smartScrollToBottom();
-      },
-      { deep: true }
-    );
+      await sendMessage(text);
+    };
 
     onMounted(() => {
       focusInput();
@@ -120,14 +89,12 @@ export default defineComponent({
 
     return {
       ...chat,
+      messages,
       currentSessionId,
       inputRef,
-      messageListRef,
       inputText,
       clearInput,
       focusInput,
-      scrollToBottom,
-      smartScrollToBottom,
       formatThinking,
       handleSend,
     };
@@ -159,7 +126,7 @@ export default defineComponent({
 
   .chat-messages {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: hidden;
     display: flex;
     flex-direction: column;
     gap: @spacing-md;

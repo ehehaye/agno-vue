@@ -4,6 +4,7 @@
       ref="textareaRef"
       :value="value"
       rows="2"
+      :style="{ resize: 'none' }"
       :placeholder="$t('chat.placeholder', { key: isMac ? 'Command + Enter' : 'Alt + Enter' })"
       @input="handleInput"
       @keydown="handleKeydown"
