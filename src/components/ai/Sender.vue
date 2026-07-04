@@ -30,8 +30,9 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted } from '@vue/composition-api';
+import { defineComponent, ref } from '@vue/composition-api';
 import StreamingIndicator from '@/components/common/StreamingIndicator.vue';
+import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { isMac } from '@/utils/ua';
 
 export default defineComponent({
@@ -48,16 +49,13 @@ export default defineComponent({
   setup(props, { emit }) {
     const textareaRef = ref(null);
     const value = ref('')
-
-    // TODO: caller
-    const focus = () => {
-      textareaRef.value?.focus?.();
-    };
+    const { focus } = useAutoFocus(textareaRef);
 
     const send = () => {
       const text = value.value
       emit('send', text);
       value.value = '';
+      focus();
     };
 
     const handleKeydown = (event) => {
@@ -65,10 +63,6 @@ export default defineComponent({
         send();
       }
     };
-
-    onMounted(() => {
-      focus();
-    });
 
     return {
       value,
@@ -96,13 +90,11 @@ export default defineComponent({
   backdrop-filter: blur(18px);
   transition:
     border-color @transition-fast,
-    box-shadow @transition-base,
-    transform @transition-base;
+    box-shadow @transition-base;
 
   &:focus-within {
     border-color: fade(@primary-color, 58%);
     box-shadow: @focus-shadow, @shadow-lg;
-    transform: translateY(-2px);
   }
 
   textarea {
