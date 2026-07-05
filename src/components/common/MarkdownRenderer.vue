@@ -14,8 +14,9 @@ import 'highlight.js/styles/vs.css';
 
 // https://marked.js.org/using_pro#renderer
 const renderer = {
-  blockquote({ text }) {
-    return `<blockquote class="md-blockquote">${text}</blockquote>`;
+  blockquote(token) {
+    const inner = this.parser.parse(token.tokens);
+    return `<blockquote class="md-blockquote">${inner}</blockquote>`;
   },
 
   code({ text, lang }) {
