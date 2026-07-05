@@ -21,7 +21,8 @@ const renderer = {
   code({ text, lang }) {
     const language = hljs.getLanguage(lang) ? lang : 'plaintext';
     const highlighted = hljs.highlight(text, { language }).value;
-    return `<pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre>`;
+    const langTag = lang ? `<div class="md-code-lang">${lang}</div>` : '';
+    return `<div class="md-code-wrapper">${langTag}<pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre></div>`;
   },
 
   codespan({ text }) {
@@ -208,18 +209,32 @@ export default defineComponent({
     font-size: 0.9em;
   }
 
-  .md-pre {
+  .md-code-wrapper {
     background-color: @code-bg;
-    padding: @spacing-xs;
     border-radius: @border-radius-md;
-    overflow-x: auto;
+    overflow: hidden;
     margin: @spacing-xs 0;
 
-    .md-code {
+    .md-code-lang {
+      text-align: left;
+      font-size: 12px;
+      color: @text-secondary;
+      padding: 4px @spacing-sm;
+      border-bottom: 1px solid @border-color;
+    }
+
+    .md-pre {
       background: none;
-      padding: 0;
-      font-size: 14px;
-      line-height: 1.5;
+      padding: @spacing-xs;
+      overflow-x: auto;
+      margin: 0;
+
+      .md-code {
+        background: none;
+        padding: 0;
+        font-size: 14px;
+        line-height: 1.5;
+      }
     }
   }
 
