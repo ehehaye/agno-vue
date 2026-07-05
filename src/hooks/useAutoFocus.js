@@ -1,90 +1,90 @@
-import { onMounted, onUnmounted } from '@vue/composition-api';
+import { onMounted, onUnmounted } from '@vue/composition-api'
 
-const FOCUS_KEEPER_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
-const BLOCKING_DIALOGS = ['confirm', 'alert', 'prompt'];
+const FOCUS_KEEPER_SELECTOR = 'input, textarea, select, [contenteditable="true"]'
+const BLOCKING_DIALOGS = ['confirm', 'alert', 'prompt']
 
-const autoFocusStack = [];
+const autoFocusStack = []
 
 function keepsFocus(target) {
-  const tag = target.tagName?.toLowerCase();
+  const tag = target.tagName?.toLowerCase()
   if (['input', 'textarea', 'select'].includes(tag)) {
-    return true;
+    return true
   }
-  return target.closest?.(FOCUS_KEEPER_SELECTOR) != null;
+  return target.closest?.(FOCUS_KEEPER_SELECTOR) != null
 }
 
 function shouldRestoreFocus(activeBefore, element) {
   if (activeBefore === element) {
-    return true;
+    return true
   }
   if (keepsFocus(document.activeElement)) {
-    return false;
+    return false
   }
   if (window.getSelection().toString().length > 0) {
-    return false;
+    return false
   }
-  return true;
+  return true
 }
 
 function patchBlockingDialogs() {
   if (patchBlockingDialogs.patched) {
-    return;
+    return
   }
-  patchBlockingDialogs.patched = true;
+  patchBlockingDialogs.patched = true
 
   BLOCKING_DIALOGS.forEach((name) => {
-    const original = window[name];
+    const original = window[name]
     if (typeof original !== 'function') {
-      return;
+      return
     }
 
     window[name] = function (...args) {
-      const activeBefore = document.activeElement;
-      const result = original.apply(this, args);
-      const element = autoFocusStack[autoFocusStack.length - 1]?.value;
+      const activeBefore = document.activeElement
+      const result = original.apply(this, args)
+      const element = autoFocusStack[autoFocusStack.length - 1]?.value
       if (element && shouldRestoreFocus(activeBefore, element)) {
-        element.focus?.();
+        element.focus?.()
       }
-      return result;
-    };
-  });
+      return result
+    }
+  })
 }
 
 export function useAutoFocus(elementRef) {
-  patchBlockingDialogs();
+  patchBlockingDialogs()
 
   const focus = () => {
-    elementRef.value?.focus?.();
-  };
+    elementRef.value?.focus?.()
+  }
 
   const handleDocumentClick = (event) => {
     if (keepsFocus(event.target)) {
-      return;
+      return
     }
 
     setTimeout(() => {
       if (!shouldRestoreFocus(null, elementRef.value)) {
-        return;
+        return
       }
-      focus();
-    }, 0);
-  };
+      focus()
+    }, 0)
+  }
 
   onMounted(() => {
-    autoFocusStack.push(elementRef);
-    focus();
-    document.addEventListener('click', handleDocumentClick);
-  });
+    autoFocusStack.push(elementRef)
+    focus()
+    document.addEventListener('click', handleDocumentClick)
+  })
 
   onUnmounted(() => {
-    document.removeEventListener('click', handleDocumentClick);
-    const index = autoFocusStack.indexOf(elementRef);
+    document.removeEventListener('click', handleDocumentClick)
+    const index = autoFocusStack.indexOf(elementRef)
     if (index > -1) {
-      autoFocusStack.splice(index, 1);
+      autoFocusStack.splice(index, 1)
     }
-  });
+  })
 
   return {
     focus,
-  };
+  }
 }

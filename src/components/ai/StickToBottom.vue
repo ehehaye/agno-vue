@@ -9,9 +9,9 @@
 </template>
 
 <script>
-import { defineComponent, watch, ref, nextTick } from '@vue/composition-api';
-import { createScrollIntoView } from '@/utils/scroll.js';
-import { useManualScrollDetector } from '@/hooks/useManualScrollDetector.js';
+import { defineComponent, nextTick, ref, watch } from '@vue/composition-api'
+import { createScrollIntoView } from '@/utils/scroll.js'
+import { useManualScrollDetector } from '@/hooks/useManualScrollDetector.js'
 
 export default defineComponent({
   name: 'StickToBottom',
@@ -26,15 +26,15 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const containerRef = ref(null);
-    const messagesEndRef = ref(null);
+    const containerRef = ref(null)
+    const messagesEndRef = ref(null)
 
-    const { scrollIntoView, cancelNextScroll } = createScrollIntoView();
+    const { scrollIntoView, cancelNextScroll } = createScrollIntoView()
     const {
       isManualScrolling, isManuallyMovedToSafeArea, restart
-    } = useManualScrollDetector(containerRef, { threshold: '100' }); // TODO: ratio threshold
+    } = useManualScrollDetector(containerRef, { threshold: '100' }) // TODO: ratio threshold
 
-    const getFirstMessageKey = messages => messages?.[0]?.[props.messageKey];
+    const getFirstMessageKey = messages => messages?.[0]?.[props.messageKey]
 
     watch(
       () => props.messages,
@@ -46,15 +46,15 @@ export default defineComponent({
 
         // Append message
         if (next.length > prev.length) {
-          restart();
+          restart()
         }
 
         // Append chunk to last message
         if (isManualScrolling.value || isManuallyMovedToSafeArea.value) {
-          cancelNextScroll();
+          cancelNextScroll()
         } else {
-          await nextTick();
-          scrollIntoView(messagesEndRef.value);
+          await nextTick()
+          scrollIntoView(messagesEndRef.value)
         }
         return
       },

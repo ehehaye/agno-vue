@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api'
 
 export default defineComponent({
   name: 'Avatar',
@@ -21,7 +21,7 @@ export default defineComponent({
       validator: (value) => ['user', 'assistant'].includes(value),
     },
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

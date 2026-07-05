@@ -15,8 +15,8 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { Collapse } from '@/components/ui';
+import { defineComponent } from '@vue/composition-api'
+import { Collapse } from '@/components/ui'
 
 export default defineComponent({
   name: 'ReasoningBlock',
@@ -32,9 +32,9 @@ export default defineComponent({
   data() {
     return {
       expanded: true,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

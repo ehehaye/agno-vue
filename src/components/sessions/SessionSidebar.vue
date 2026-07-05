@@ -51,12 +51,12 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { VirtualScrollList } from '@/components/common';
-import { useSessionManager } from '@/hooks/agno/useSessionManager.js';
-import { useAgentRun } from '@/hooks/agno/useAgentRun.js';
-import { useConfig } from '@/hooks/agno/useConfig';
-import { usePerfTrack } from '@/hooks/usePerfTrack.js';
+import { defineComponent } from '@vue/composition-api'
+import { VirtualScrollList } from '@/components/common'
+import { useSessionManager } from '@/hooks/agno/useSessionManager.js'
+import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
+import { useConfig } from '@/hooks/agno/useConfig'
+import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 
 export default defineComponent({
   name: 'SessionSidebar',
@@ -67,13 +67,13 @@ export default defineComponent({
     usePerfTrack()
     const { currentSessionId, setCurrentSessionId } = useConfig()
     const { loadSession } = useAgentRun()
-    const { sessions, selectedSessionIds, deleteSelectedSessions } = useSessionManager();
-    const sessionItemHeight = 64;
+    const { sessions, selectedSessionIds, deleteSelectedSessions } = useSessionManager()
+    const sessionItemHeight = 64
 
-    const formatTime = (time) => new Date(time).toLocaleString();
+    const formatTime = (time) => new Date(time).toLocaleString()
     const formatSessionName = (name) => {
       if (typeof name !== 'string') {
-        return name || '';
+        return name || ''
       }
 
       // Name is a JSON string during session creation
@@ -85,7 +85,7 @@ export default defineComponent({
         }
       }
       return name
-    };
+    }
 
     const handleLoadSession = (id) => {
       setCurrentSessionId(id)
@@ -94,13 +94,13 @@ export default defineComponent({
 
     const handleDelete = async (id) => {
       if (!window.confirm(root.$t('sidebar.deleteConfirm'))) {
-        return;
+        return
       }
 
       // TODO: handle multiple selection
-      selectedSessionIds.value = new Set([id]);
-      await deleteSelectedSessions();
-    };
+      selectedSessionIds.value = new Set([id])
+      await deleteSelectedSessions()
+    }
 
     return {
       sessions,
@@ -111,9 +111,9 @@ export default defineComponent({
       formatTime,
       formatSessionName,
       handleDelete,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

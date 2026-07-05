@@ -49,40 +49,40 @@
 </template>
 
 <script>
-import { computed, defineComponent } from '@vue/composition-api';
-import { useAgentRun } from '@/hooks/agno/useAgentRun';  
-import { useConfig } from '@/hooks/agno/useConfig';
-import { usePerfTrack } from '@/hooks/usePerfTrack';
+import { computed, defineComponent } from '@vue/composition-api'
+import { useAgentRun } from '@/hooks/agno/useAgentRun'  
+import { useConfig } from '@/hooks/agno/useConfig'
+import { usePerfTrack } from '@/hooks/usePerfTrack'
 
 export default defineComponent({
   name: 'ConfigPanel',
   setup() {
-    usePerfTrack();
-    const { isStreaming } = useAgentRun();
+    usePerfTrack()
+    const { isStreaming } = useAgentRun()
     const {
       agents, teams, selectedEntity, selectedEntityType,
       selectEntity, selectDefaultAgent, selectDefaultTeam,
-    } = useConfig();
+    } = useConfig()
 
     const entities = computed(() =>
       selectedEntityType.value === 'team' ? teams.value : agents.value
-    );
+    )
 
     const handleEntityTypeChange = (event) => {
-      const type = event.target.value;
+      const type = event.target.value
       if (type === 'agent') {
-        selectDefaultAgent();
+        selectDefaultAgent()
       } else if (type === 'team') {
-        selectDefaultTeam();
+        selectDefaultTeam()
       }
-    };
+    }
 
     const handleEntityChange = (event) => {
-      const id = event.target.value;
-      const type = selectedEntityType.value;
-      const entity = entities.value.find((e) => e.id === id);
-      selectEntity(type, id, entity?.name);
-    };
+      const id = event.target.value
+      const type = selectedEntityType.value
+      const entity = entities.value.find((e) => e.id === id)
+      selectEntity(type, id, entity?.name)
+    }
 
     return {
       agents,
@@ -93,9 +93,9 @@ export default defineComponent({
       selectedEntityType,
       handleEntityTypeChange,
       handleEntityChange,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

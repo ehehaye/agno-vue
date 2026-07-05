@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
-import { createVuePlugin } from 'vite-plugin-vue2';
-import { fileURLToPath, URL } from 'node:url';
-import { codeInspectorPlugin } from 'code-inspector-plugin';
+import { defineConfig } from 'vite'
+import { createVuePlugin } from 'vite-plugin-vue2'
+import { URL, fileURLToPath } from 'node:url'
+import { codeInspectorPlugin } from 'code-inspector-plugin'
 
 export default defineConfig({
   plugins: [
@@ -33,4 +33,4 @@ export default defineConfig({
       },
     },
   },
-});
+})

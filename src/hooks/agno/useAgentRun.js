@@ -1,21 +1,21 @@
-import { ref, watch } from '@vue/composition-api';
-import { isTeamEvent } from '@/types';
-import { SSEParser } from '@/utils/sse-parser';
-import { useConfig } from '@/hooks/agno/useConfig';
-import { uuid } from '@/utils/index';
-import events, { RuntimeEvents } from '@/hooks/agno/events';
+import { ref, watch } from '@vue/composition-api'
+import { isTeamEvent } from '@/types'
+import { SSEParser } from '@/utils/sse-parser'
+import { useConfig } from '@/hooks/agno/useConfig'
+import { uuid } from '@/utils/index'
+import events, { RuntimeEvents } from '@/hooks/agno/events'
 
-const messages = ref([]);
-const currentRun = ref(null);
-const isStreaming = ref(false);
-const error = ref(null);
+const messages = ref([])
+const currentRun = ref(null)
+const isStreaming = ref(false)
+const error = ref(null)
 
 export function useAgentRun() {
   const { serverUrl, connectionStatus, selectedEntity, currentSessionId, setCurrentSessionId } =
-    useConfig();
+    useConfig()
 
-  const parser = new SSEParser();
-  const memberRuns = new Map();
+  const parser = new SSEParser()
+  const memberRuns = new Map()
 
   function onSessionIdUpdate(runEvent) {
     const session = {
@@ -24,351 +24,351 @@ export function useAgentRun() {
       session_id: runEvent.session_id,
       session_name: messages.value[0]?.content || '',
       session_type: selectedEntity.value?.type,
-    };
+    }
     if (session.session_id !== currentSessionId.value) {
-      setCurrentSessionId(session.session_id);
-      events.emit(RuntimeEvents.SESSION_CREATED, session);
+      setCurrentSessionId(session.session_id)
+      events.emit(RuntimeEvents.SESSION_CREATED, session)
     }
   }
 
   function updateMemberRunsInCurrentRun() {
-    if (!currentRun.value) return;
+    if (!currentRun.value) return
     currentRun.value = {
       ...currentRun.value,
       member_runs: Array.from(memberRuns.values()),
-    };
+    }
   }
 
   function handleMemberAgentEvent(event, parentRunId) {
     switch (event.event) {
-      case 'RunStarted': {
-        const runEvent = event;
-        const memberRun = {
-          run_id: runEvent.run_id,
-          agent_id: runEvent.agent_id,
-          agent_name: runEvent.agent_name,
-          reasoning_content: '',
-          content: '',
-          tool_calls: [],
-          status: 'streaming',
-          parent_run_id: parentRunId,
-        };
-        memberRuns.set(runEvent.run_id, memberRun);
-        updateMemberRunsInCurrentRun();
-        break;
+    case 'RunStarted': {
+      const runEvent = event
+      const memberRun = {
+        run_id: runEvent.run_id,
+        agent_id: runEvent.agent_id,
+        agent_name: runEvent.agent_name,
+        reasoning_content: '',
+        content: '',
+        tool_calls: [],
+        status: 'streaming',
+        parent_run_id: parentRunId,
       }
+      memberRuns.set(runEvent.run_id, memberRun)
+      updateMemberRunsInCurrentRun()
+      break
+    }
 
-      case 'RunContent': {
-        const contentEvent = event;
-        const memberRun = memberRuns.get(contentEvent.run_id);
-        if (memberRun) {
-          memberRun.reasoning_content += contentEvent.reasoning_content || '';
-          memberRun.content += contentEvent.content || '';
-          updateMemberRunsInCurrentRun();
-        }
-        break;
+    case 'RunContent': {
+      const contentEvent = event
+      const memberRun = memberRuns.get(contentEvent.run_id)
+      if (memberRun) {
+        memberRun.reasoning_content += contentEvent.reasoning_content || ''
+        memberRun.content += contentEvent.content || ''
+        updateMemberRunsInCurrentRun()
       }
+      break
+    }
 
-      case 'ToolCallStarted': {
-        const toolEvent = event;
-        const memberRun = memberRuns.get(toolEvent.run_id);
-        if (memberRun) {
-          memberRun.tool_calls.push({
-            tool: toolEvent.tool,
-            status: 'running',
-          });
-          updateMemberRunsInCurrentRun();
-        }
-        break;
+    case 'ToolCallStarted': {
+      const toolEvent = event
+      const memberRun = memberRuns.get(toolEvent.run_id)
+      if (memberRun) {
+        memberRun.tool_calls.push({
+          tool: toolEvent.tool,
+          status: 'running',
+        })
+        updateMemberRunsInCurrentRun()
       }
+      break
+    }
 
-      case 'ToolCallCompleted': {
-        const toolEvent = event;
-        const memberRun = memberRuns.get(toolEvent.run_id);
-        if (memberRun) {
-          memberRun.tool_calls = memberRun.tool_calls.map((tc) =>
-            tc.tool.tool_call_id === toolEvent.tool.tool_call_id
-              ? {
-                  tool: toolEvent.tool,
-                  status: toolEvent.tool.tool_call_error
-                    ? 'error'
-                    : 'completed',
-                }
-              : tc
-          );
-          updateMemberRunsInCurrentRun();
-        }
-        break;
+    case 'ToolCallCompleted': {
+      const toolEvent = event
+      const memberRun = memberRuns.get(toolEvent.run_id)
+      if (memberRun) {
+        memberRun.tool_calls = memberRun.tool_calls.map((tc) =>
+          tc.tool.tool_call_id === toolEvent.tool.tool_call_id
+            ? {
+              tool: toolEvent.tool,
+              status: toolEvent.tool.tool_call_error
+                ? 'error'
+                : 'completed',
+            }
+            : tc
+        )
+        updateMemberRunsInCurrentRun()
       }
+      break
+    }
 
-      case 'RunCompleted': {
-        const completedEvent = event;
-        const memberRun = memberRuns.get(completedEvent.run_id);
-        if (memberRun) {
-          memberRun.content = completedEvent.content;
-          memberRun.reasoning_content = completedEvent.reasoning_content;
-          memberRun.status = 'completed';
-          memberRun.metrics = {
-            time_to_first_token: completedEvent.metrics?.time_to_first_token,
-            duration: completedEvent.metrics?.duration,
-          };
-          updateMemberRunsInCurrentRun();
+    case 'RunCompleted': {
+      const completedEvent = event
+      const memberRun = memberRuns.get(completedEvent.run_id)
+      if (memberRun) {
+        memberRun.content = completedEvent.content
+        memberRun.reasoning_content = completedEvent.reasoning_content
+        memberRun.status = 'completed'
+        memberRun.metrics = {
+          time_to_first_token: completedEvent.metrics?.time_to_first_token,
+          duration: completedEvent.metrics?.duration,
         }
-        break;
+        updateMemberRunsInCurrentRun()
       }
+      break
+    }
     }
   }
 
   function handleTeamEvent(event) {
     switch (event.event) {
-      case 'TeamRunStarted': {
-        const runEvent = event;
-        onSessionIdUpdate(runEvent);
-        const newRun = {
-          run_id: runEvent.run_id,
-          session_id: runEvent.session_id,
-          entity_type: 'team',
-          entity_id: runEvent.team_id,
-          entity_name: runEvent.team_name,
-          reasoning_content: '',
-          content: '',
-          tool_calls: [],
-          member_runs: [],
-          status: 'streaming',
-          metrics: {
-            model: runEvent.model,
-            provider: runEvent.model_provider,
-          },
-        };
-        currentRun.value = newRun;
-        memberRuns.clear();
-        break;
+    case 'TeamRunStarted': {
+      const runEvent = event
+      onSessionIdUpdate(runEvent)
+      const newRun = {
+        run_id: runEvent.run_id,
+        session_id: runEvent.session_id,
+        entity_type: 'team',
+        entity_id: runEvent.team_id,
+        entity_name: runEvent.team_name,
+        reasoning_content: '',
+        content: '',
+        tool_calls: [],
+        member_runs: [],
+        status: 'streaming',
+        metrics: {
+          model: runEvent.model,
+          provider: runEvent.model_provider,
+        },
       }
+      currentRun.value = newRun
+      memberRuns.clear()
+      break
+    }
 
-      case 'TeamRunContent': {
-        const contentEvent = event;
-        if (!currentRun.value) break;
-        currentRun.value = {
-          ...currentRun.value,
-          reasoning_content:
+    case 'TeamRunContent': {
+      const contentEvent = event
+      if (!currentRun.value) break
+      currentRun.value = {
+        ...currentRun.value,
+        reasoning_content:
             currentRun.value.reasoning_content +
             (contentEvent.reasoning_content || ''),
-          content: currentRun.value.content + (contentEvent.content || ''),
-        };
-        break;
+        content: currentRun.value.content + (contentEvent.content || ''),
       }
+      break
+    }
 
-      case 'TeamToolCallStarted': {
-        const toolEvent = event;
-        if (!currentRun.value) break;
-        currentRun.value = {
-          ...currentRun.value,
-          tool_calls: [
-            ...currentRun.value.tool_calls,
-            { tool: toolEvent.tool, status: 'running' },
-          ],
-        };
-        break;
+    case 'TeamToolCallStarted': {
+      const toolEvent = event
+      if (!currentRun.value) break
+      currentRun.value = {
+        ...currentRun.value,
+        tool_calls: [
+          ...currentRun.value.tool_calls,
+          { tool: toolEvent.tool, status: 'running' },
+        ],
       }
+      break
+    }
 
-      case 'TeamToolCallCompleted': {
-        const toolEvent = event;
-        if (!currentRun.value) break;
-        currentRun.value = {
-          ...currentRun.value,
-          tool_calls: currentRun.value.tool_calls.map((tc) =>
-            tc.tool.tool_call_id === toolEvent.tool.tool_call_id
-              ? {
-                  tool: toolEvent.tool,
-                  status: toolEvent.tool.tool_call_error
-                    ? 'error'
-                    : 'completed',
-                }
-              : tc
-          ),
-        };
-        break;
+    case 'TeamToolCallCompleted': {
+      const toolEvent = event
+      if (!currentRun.value) break
+      currentRun.value = {
+        ...currentRun.value,
+        tool_calls: currentRun.value.tool_calls.map((tc) =>
+          tc.tool.tool_call_id === toolEvent.tool.tool_call_id
+            ? {
+              tool: toolEvent.tool,
+              status: toolEvent.tool.tool_call_error
+                ? 'error'
+                : 'completed',
+            }
+            : tc
+        ),
       }
+      break
+    }
 
-      case 'TeamRunCompleted': {
-        const completedEvent = event;
-        const prevRun = currentRun.value;
-        if (prevRun) {
-          const finalRun = {
-            ...prevRun,
-            content: completedEvent.content,
-            reasoning_content: completedEvent.reasoning_content,
-            status: 'completed',
-            metrics: {
-              ...prevRun.metrics,
-              time_to_first_token: completedEvent.metrics.time_to_first_token,
-              duration: completedEvent.metrics.duration,
-            },
-          };
-          const assistantMessage = {
-            id: uuid(),
-            role: 'assistant',
-            content: completedEvent.content,
-            timestamp: Date.now(),
-            streamMessage: finalRun,
-          };
-          messages.value = [...messages.value, assistantMessage];
-          currentRun.value = null;
+    case 'TeamRunCompleted': {
+      const completedEvent = event
+      const prevRun = currentRun.value
+      if (prevRun) {
+        const finalRun = {
+          ...prevRun,
+          content: completedEvent.content,
+          reasoning_content: completedEvent.reasoning_content,
+          status: 'completed',
+          metrics: {
+            ...prevRun.metrics,
+            time_to_first_token: completedEvent.metrics.time_to_first_token,
+            duration: completedEvent.metrics.duration,
+          },
         }
-        break;
+        const assistantMessage = {
+          id: uuid(),
+          role: 'assistant',
+          content: completedEvent.content,
+          timestamp: Date.now(),
+          streamMessage: finalRun,
+        }
+        messages.value = [...messages.value, assistantMessage]
+        currentRun.value = null
       }
+      break
+    }
     }
   }
 
   function handleAgentRunEvent(event) {
-    const agentEvent = event;
-    const parentRunId = agentEvent.parent_run_id;
+    const agentEvent = event
+    const parentRunId = agentEvent.parent_run_id
 
     if (parentRunId && currentRun.value?.run_id === parentRunId) {
-      handleMemberAgentEvent(agentEvent, parentRunId);
-      return;
+      handleMemberAgentEvent(agentEvent, parentRunId)
+      return
     }
 
     switch (event.event) {
-      case 'RunStarted': {
-        const runEvent = event;
-        onSessionIdUpdate(runEvent);
-        const newRun = {
-          run_id: runEvent.run_id,
-          session_id: runEvent.session_id,
-          entity_type: 'agent',
-          entity_id: runEvent.agent_id,
-          entity_name: runEvent.agent_name,
-          reasoning_content: '',
-          content: '',
-          tool_calls: [],
-          member_runs: [],
-          status: 'streaming',
-          metrics: {
-            model: runEvent.model,
-            provider: runEvent.model_provider,
-          },
-        };
-        currentRun.value = newRun;
-        break;
+    case 'RunStarted': {
+      const runEvent = event
+      onSessionIdUpdate(runEvent)
+      const newRun = {
+        run_id: runEvent.run_id,
+        session_id: runEvent.session_id,
+        entity_type: 'agent',
+        entity_id: runEvent.agent_id,
+        entity_name: runEvent.agent_name,
+        reasoning_content: '',
+        content: '',
+        tool_calls: [],
+        member_runs: [],
+        status: 'streaming',
+        metrics: {
+          model: runEvent.model,
+          provider: runEvent.model_provider,
+        },
       }
+      currentRun.value = newRun
+      break
+    }
 
-      case 'RunContent': {
-        const contentEvent = event;
-        if (!currentRun.value) break;
-        currentRun.value = {
-          ...currentRun.value,
-          reasoning_content:
+    case 'RunContent': {
+      const contentEvent = event
+      if (!currentRun.value) break
+      currentRun.value = {
+        ...currentRun.value,
+        reasoning_content:
             currentRun.value.reasoning_content +
             (contentEvent.reasoning_content || ''),
-          content: currentRun.value.content + (contentEvent.content || ''),
-        };
-        break;
+        content: currentRun.value.content + (contentEvent.content || ''),
       }
+      break
+    }
 
-      case 'ToolCallStarted': {
-        const toolEvent = event;
-        if (!currentRun.value) break;
-        currentRun.value = {
-          ...currentRun.value,
-          tool_calls: [
-            ...currentRun.value.tool_calls,
-            { tool: toolEvent.tool, status: 'running' },
-          ],
-        };
-        break;
+    case 'ToolCallStarted': {
+      const toolEvent = event
+      if (!currentRun.value) break
+      currentRun.value = {
+        ...currentRun.value,
+        tool_calls: [
+          ...currentRun.value.tool_calls,
+          { tool: toolEvent.tool, status: 'running' },
+        ],
       }
+      break
+    }
 
-      case 'ToolCallCompleted': {
-        const toolEvent = event;
-        if (!currentRun.value) break;
-        currentRun.value = {
-          ...currentRun.value,
-          tool_calls: currentRun.value.tool_calls.map((tc) =>
-            tc.tool.tool_call_id === toolEvent.tool.tool_call_id
-              ? {
-                  tool: toolEvent.tool,
-                  status: toolEvent.tool.tool_call_error
-                    ? 'error'
-                    : 'completed',
-                }
-              : tc
-          ),
-        };
-        break;
+    case 'ToolCallCompleted': {
+      const toolEvent = event
+      if (!currentRun.value) break
+      currentRun.value = {
+        ...currentRun.value,
+        tool_calls: currentRun.value.tool_calls.map((tc) =>
+          tc.tool.tool_call_id === toolEvent.tool.tool_call_id
+            ? {
+              tool: toolEvent.tool,
+              status: toolEvent.tool.tool_call_error
+                ? 'error'
+                : 'completed',
+            }
+            : tc
+        ),
       }
+      break
+    }
 
-      case 'RunCompleted': {
-        const completedEvent = event;
-        const prevRun = currentRun.value;
-        if (prevRun) {
-          const finalRun = {
-            ...prevRun,
-            content: completedEvent.content,
-            reasoning_content: completedEvent.reasoning_content,
-            status: 'completed',
-            metrics: {
-              ...prevRun.metrics,
-              time_to_first_token: completedEvent.metrics.time_to_first_token,
-              duration: completedEvent.metrics.duration,
-            },
-          };
-          const assistantMessage = {
-            id: uuid(),
-            role: 'assistant',
-            content: completedEvent.content,
-            timestamp: Date.now(),
-            streamMessage: finalRun,
-          };
-          messages.value = [...messages.value, assistantMessage];
-          currentRun.value = null;
+    case 'RunCompleted': {
+      const completedEvent = event
+      const prevRun = currentRun.value
+      if (prevRun) {
+        const finalRun = {
+          ...prevRun,
+          content: completedEvent.content,
+          reasoning_content: completedEvent.reasoning_content,
+          status: 'completed',
+          metrics: {
+            ...prevRun.metrics,
+            time_to_first_token: completedEvent.metrics.time_to_first_token,
+            duration: completedEvent.metrics.duration,
+          },
         }
-        break;
+        const assistantMessage = {
+          id: uuid(),
+          role: 'assistant',
+          content: completedEvent.content,
+          timestamp: Date.now(),
+          streamMessage: finalRun,
+        }
+        messages.value = [...messages.value, assistantMessage]
+        currentRun.value = null
       }
+      break
+    }
     }
   }
 
   function handleAgentEvent(event) {
     // TODO: workflow
     if (isTeamEvent(event)) {
-      handleTeamEvent(event);
+      handleTeamEvent(event)
     } else {
-      handleAgentRunEvent(event);
+      handleAgentRunEvent(event)
     }
   }
 
   async function sendMessage(content) {
-    if (isStreaming.value) return;
+    if (isStreaming.value) return
 
     if (!selectedEntity.value) {
-      error.value = 'Please select an agent or team from the sidebar';
-      return;
+      error.value = 'Please select an agent or team from the sidebar'
+      return
     }
 
-    error.value = null;
+    error.value = null
     const userMessage = {
       id: uuid(),
       role: 'user',
       content,
       timestamp: Date.now(),
-    };
+    }
 
-    messages.value = [...messages.value, userMessage];
-    isStreaming.value = true;
-    parser.reset();
-    memberRuns.clear();
+    messages.value = [...messages.value, userMessage]
+    isStreaming.value = true
+    parser.reset()
+    memberRuns.clear()
 
     try {
       // TODO: background
-      const formData = new URLSearchParams();
-      formData.append('message', content);
-      formData.append('stream', 'true');
+      const formData = new URLSearchParams()
+      formData.append('message', content)
+      formData.append('stream', 'true')
       if (currentSessionId.value) {
-        formData.append('session_id', currentSessionId.value);
+        formData.append('session_id', currentSessionId.value)
       }
 
       const endpoint =
-        selectedEntity.value.type === 'team' ? 'teams' : 'agents';
+        selectedEntity.value.type === 'team' ? 'teams' : 'agents'
       const response = await fetch(
         `${serverUrl.value}/${endpoint}/${selectedEntity.value.id}/runs`,
         {
@@ -378,108 +378,108 @@ export function useAgentRun() {
           },
           body: formData.toString(),
         }
-      );
+      )
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const reader = response.body?.getReader();
+      const reader = response.body?.getReader()
       if (!reader) {
-        throw new Error('No response body');
+        throw new Error('No response body')
       }
 
-      const decoder = new TextDecoder();
+      const decoder = new TextDecoder()
 
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        const { done, value } = await reader.read()
+        if (done) break
 
-        const chunk = decoder.decode(value, { stream: true });
-        parser.parse(chunk, handleAgentEvent);
+        const chunk = decoder.decode(value, { stream: true })
+        parser.parse(chunk, handleAgentEvent)
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      error.value = errorMessage;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      error.value = errorMessage
       if (currentRun.value) {
-        currentRun.value = { ...currentRun.value, status: 'error' };
+        currentRun.value = { ...currentRun.value, status: 'error' }
       }
     } finally {
-      isStreaming.value = false;
+      isStreaming.value = false
     }
   }
 
   function clearMessages() {
     // TODO: AbortController
-    messages.value = [];
-    currentRun.value = null;
-    error.value = null;
-    memberRuns.clear();
+    messages.value = []
+    currentRun.value = null
+    error.value = null
+    memberRuns.clear()
   }
 
   watch(currentSessionId, (next) => {
     if (!next) {
-      clearMessages();
+      clearMessages()
     }
-  });
+  })
 
   watch([connectionStatus, selectedEntity], () => {
-    clearMessages();
-  });
+    clearMessages()
+  })
 
   // TODO: resume
   // TODO: move to useSessionManager
   async function loadSession(targetSessionId) {
     if (!serverUrl.value) {
-      error.value = 'Server URL not configured';
-      return;
+      error.value = 'Server URL not configured'
+      return
     }
 
-    isStreaming.value = true;
-    error.value = null;
+    isStreaming.value = true
+    error.value = null
 
     try {
       const response = await fetch(
         `${serverUrl.value}/sessions/${targetSessionId}/runs`
-      );
+      )
 
       if (!response.ok) {
-        throw new Error(`Failed to load session: ${response.status}`);
+        throw new Error(`Failed to load session: ${response.status}`)
       }
 
-      const runs = await response.json();
+      const runs = await response.json()
 
-      const topLevelRuns = runs.filter((r) => !r.parent_run_id);
-      const childRuns = runs.filter((r) => r.parent_run_id);
+      const topLevelRuns = runs.filter((r) => !r.parent_run_id)
+      const childRuns = runs.filter((r) => r.parent_run_id)
 
-      const memberRunsByParent = new Map();
+      const memberRunsByParent = new Map()
       childRuns.forEach((run) => {
-        const parentId = run.parent_run_id;
+        const parentId = run.parent_run_id
         if (!memberRunsByParent.has(parentId)) {
-          memberRunsByParent.set(parentId, []);
+          memberRunsByParent.set(parentId, [])
         }
-        memberRunsByParent.get(parentId).push(run);
-      });
+        memberRunsByParent.get(parentId).push(run)
+      })
 
       topLevelRuns.sort((a, b) => {
-        const aTime = a.messages?.[0]?.created_at || 0;
-        const bTime = b.messages?.[0]?.created_at || 0;
-        return aTime - bTime;
-      });
+        const aTime = a.messages?.[0]?.created_at || 0
+        const bTime = b.messages?.[0]?.created_at || 0
+        return aTime - bTime
+      })
 
-      const loadedMessages = [];
+      const loadedMessages = []
 
       topLevelRuns.forEach((run) => {
-        const hasMemberRuns = memberRunsByParent.has(run.run_id);
-        const entityType = hasMemberRuns ? 'team' : 'agent';
+        const hasMemberRuns = memberRunsByParent.has(run.run_id)
+        const entityType = hasMemberRuns ? 'team' : 'agent'
 
         const assistantMessage = run.messages?.find(
           (m) =>
             m.role === 'assistant' && m.tool_calls && m.tool_calls.length > 0
-        );
+        )
 
-        let toolCalls = [];
+        let toolCalls = []
         if (run.tools && run.tools.length > 0) {
           toolCalls = run.tools.map((tool) => ({
             tool: {
@@ -505,7 +505,7 @@ export function useAgentRun() {
               approval_id: null,
             },
             status: tool.tool_call_error ? 'error' : 'completed',
-          }));
+          }))
         } else if (assistantMessage?.tool_calls) {
           toolCalls = assistantMessage.tool_calls.map((tc) => ({
             tool: {
@@ -531,14 +531,14 @@ export function useAgentRun() {
               approval_id: null,
             },
             status: 'completed',
-          }));
+          }))
         }
 
-        const memberRunsForThisRun = [];
+        const memberRunsForThisRun = []
         if (hasMemberRuns) {
-          const children = memberRunsByParent.get(run.run_id) || [];
+          const children = memberRunsByParent.get(run.run_id) || []
           children.forEach((childRun) => {
-            const memberToolCalls = [];
+            const memberToolCalls = []
             if (childRun.tools && childRun.tools.length > 0) {
               childRun.tools.forEach((tool) => {
                 memberToolCalls.push({
@@ -565,8 +565,8 @@ export function useAgentRun() {
                     approval_id: null,
                   },
                   status: tool.tool_call_error ? 'error' : 'completed',
-                });
-              });
+                })
+              })
             }
 
             memberRunsForThisRun.push({
@@ -584,24 +584,24 @@ export function useAgentRun() {
                 model: childRun.metrics?.details?.model?.[0]?.id,
                 provider: childRun.metrics?.details?.model?.[0]?.provider,
               },
-            });
-          });
+            })
+          })
         }
 
         if (run.run_input) {
-          const msgTime = run.messages?.[0]?.created_at || Date.now() / 1000;
+          const msgTime = run.messages?.[0]?.created_at || Date.now() / 1000
           loadedMessages.push({
             id: uuid(),
             role: 'user',
             content: run.run_input,
             timestamp: msgTime * 1000,
-          });
+          })
         }
 
         if (run.content || run.reasoning_content) {
           const msgTime =
             run.messages?.[run.messages.length - 1]?.created_at ||
-            Date.now() / 1000;
+            Date.now() / 1000
           loadedMessages.push({
             id: uuid(),
             role: 'assistant',
@@ -625,17 +625,17 @@ export function useAgentRun() {
                 provider: run.metrics?.details?.model?.[0]?.provider,
               },
             },
-          });
+          })
         }
-      });
+      })
 
-      messages.value = loadedMessages;
+      messages.value = loadedMessages
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Failed to load session';
-      error.value = errorMessage;
+        err instanceof Error ? err.message : 'Failed to load session'
+      error.value = errorMessage
     } finally {
-      isStreaming.value = false;
+      isStreaming.value = false
     }
   }
 
@@ -647,5 +647,5 @@ export function useAgentRun() {
     sendMessage,
     loadSession,
     clearMessages,
-  };
+  }
 }

@@ -40,4 +40,4 @@ export default {
     user: 'User',
     assistant: 'AI Assistant',
   },
-};
+}

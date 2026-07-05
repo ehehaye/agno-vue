@@ -21,10 +21,10 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import Avatar from '@/components/ai/Avatar.vue';
-import AssistantMessage from '@/components/chat/messages/AssistantMessage.vue';
-import UserMessage from '@/components/chat/messages/UserMessage.vue';
+import { defineComponent } from '@vue/composition-api'
+import Avatar from '@/components/ai/Avatar.vue'
+import AssistantMessage from '@/components/chat/messages/AssistantMessage.vue'
+import UserMessage from '@/components/chat/messages/UserMessage.vue'
 
 export default defineComponent({
   name: 'ChatMessage',
@@ -50,7 +50,7 @@ export default defineComponent({
       }),
     },
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

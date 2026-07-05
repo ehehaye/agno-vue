@@ -35,13 +35,13 @@
 </template>
 
 <script>
-import { defineComponent, computed } from '@vue/composition-api';
-import Sender from '@/components/ai/Sender.vue';
-import StickToBottom from '@/components/ai/StickToBottom.vue';
-import ChatMessage from '@/components/chat/ChatMessage.vue';
+import { computed, defineComponent } from '@vue/composition-api'
+import Sender from '@/components/ai/Sender.vue'
+import StickToBottom from '@/components/ai/StickToBottom.vue'
+import ChatMessage from '@/components/chat/ChatMessage.vue'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
-import { useConfig } from '@/hooks/agno/useConfig.js'; 
-import { usePerfTrack } from '@/hooks/usePerfTrack.js';
+import { useConfig } from '@/hooks/agno/useConfig.js' 
+import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 
 export default defineComponent({
   name: 'ChatInterface',
@@ -52,8 +52,8 @@ export default defineComponent({
   },
   setup() {
     usePerfTrack()
-    const { currentSessionId } = useConfig();
-    const { messages, currentRun, isStreaming, sendMessage } = useAgentRun();
+    const { currentSessionId } = useConfig()
+    const { messages, currentRun, isStreaming, sendMessage } = useAgentRun()
 
     const streamingMessage = computed(() => {
       if (currentRun.value?.status === 'streaming') {
@@ -63,14 +63,14 @@ export default defineComponent({
           content: '',
           timestamp: 0,
           streamMessage: currentRun.value,
-        };
+        }
       }
-      return null;
-    });
+      return null
+    })
 
     const handleSend = async (text) => {
-      await sendMessage(text);
-    };
+      await sendMessage(text)
+    }
 
     return {
       isStreaming,
@@ -79,9 +79,9 @@ export default defineComponent({
       handleSend,
       cancelRun: () => { },
       streamingMessage,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

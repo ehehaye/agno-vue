@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, ref } from '@vue/composition-api'
 export default defineComponent({
   name: 'AppLayout',
   props: {
@@ -50,17 +50,17 @@ export default defineComponent({
     },
   },
   setup() {
-    const isAsideCollapsed = ref(false);
+    const isAsideCollapsed = ref(false)
     const toggleAside = () => {
-      isAsideCollapsed.value = !isAsideCollapsed.value;
-    };
+      isAsideCollapsed.value = !isAsideCollapsed.value
+    }
 
     return {
       isAsideCollapsed,
       toggleAside,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

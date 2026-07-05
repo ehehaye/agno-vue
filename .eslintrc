@@ -15,6 +15,18 @@
   },
   "rules": {
     "vue/multi-word-component-names": "off",
-    "vue/singleline-html-element-content-newline": "off"
-  }
+    "vue/singleline-html-element-content-newline": "off",
+    "semi": ["error", "never"],
+    "sort-imports": ["error", { "ignoreDeclarationSort": true, "ignoreMemberSort": false }],
+    "indent": ["error", 2],
+    "vue/script-indent": ["error", 2],
+  },
+  "overrides": [
+    {
+      "files": ["*.vue"],
+      "rules": {
+        "indent": "off"
+      }
+    }
+  ]
 }

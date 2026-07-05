@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api'
 
 export default defineComponent({
   name: 'VirtualScrollList',
@@ -66,179 +66,179 @@ export default defineComponent({
       viewportHeight: 0,
       scrollRafId: null,
       resizeObserver: null,
-    };
+    }
   },
   computed: {
     containerStyle() {
-      const height = typeof this.height === 'number' ? `${this.height}px` : this.height;
+      const height = typeof this.height === 'number' ? `${this.height}px` : this.height
 
       return {
         height,
-      };
+      }
     },
     totalHeight() {
-      return this.items.length * this.itemHeight;
+      return this.items.length * this.itemHeight
     },
     spacerStyle() {
       return {
         height: `${this.totalHeight}px`,
-      };
+      }
     },
     visibleRange() {
       if (!this.items.length || !this.viewportHeight) {
         return {
           start: 0,
           end: 0,
-        };
+        }
       }
 
-      const visibleStart = Math.floor(this.scrollTop / this.itemHeight);
-      const visibleEnd = Math.ceil((this.scrollTop + this.viewportHeight) / this.itemHeight);
-      const start = Math.max(0, visibleStart - this.buffer);
-      const end = Math.min(this.items.length, visibleEnd + this.buffer);
+      const visibleStart = Math.floor(this.scrollTop / this.itemHeight)
+      const visibleEnd = Math.ceil((this.scrollTop + this.viewportHeight) / this.itemHeight)
+      const start = Math.max(0, visibleStart - this.buffer)
+      const end = Math.min(this.items.length, visibleEnd + this.buffer)
 
       return {
         start,
         end,
-      };
+      }
     },
     visibleItems() {
-      const { start, end } = this.visibleRange;
+      const { start, end } = this.visibleRange
 
       return this.items.slice(start, end).map((item, offset) => ({
         item,
         index: start + offset,
-      }));
+      }))
     },
   },
   watch: {
     items() {
       this.$nextTick(() => {
-        this.refresh();
-      });
+        this.refresh()
+      })
     },
     'items.length'() {
       this.$nextTick(() => {
-        this.refresh();
-      });
+        this.refresh()
+      })
     },
     itemHeight() {
       this.$nextTick(() => {
-        this.refresh();
-      });
+        this.refresh()
+      })
     },
   },
   mounted() {
-    this.refresh();
+    this.refresh()
 
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => {
-        this.refresh();
-      });
-      this.resizeObserver.observe(this.$refs.containerRef);
+        this.refresh()
+      })
+      this.resizeObserver.observe(this.$refs.containerRef)
     } else {
-      window.addEventListener('resize', this.refresh);
+      window.addEventListener('resize', this.refresh)
     }
   },
   beforeDestroy() {
     if (this.scrollRafId) {
-      cancelAnimationFrame(this.scrollRafId);
+      cancelAnimationFrame(this.scrollRafId)
     }
 
     if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
+      this.resizeObserver.disconnect()
     } else {
-      window.removeEventListener('resize', this.refresh);
+      window.removeEventListener('resize', this.refresh)
     }
   },
   methods: {
     refresh() {
-      const container = this.$refs.containerRef;
-      if (!container) return;
+      const container = this.$refs.containerRef
+      if (!container) return
 
-      this.viewportHeight = container.clientHeight;
-      this.scrollTop = Math.min(container.scrollTop, Math.max(0, this.totalHeight - this.viewportHeight));
+      this.viewportHeight = container.clientHeight
+      this.scrollTop = Math.min(container.scrollTop, Math.max(0, this.totalHeight - this.viewportHeight))
 
       if (container.scrollTop !== this.scrollTop) {
-        container.scrollTop = this.scrollTop;
+        container.scrollTop = this.scrollTop
       }
     },
     handleScroll(event) {
-      const nextScrollTop = event.target.scrollTop;
+      const nextScrollTop = event.target.scrollTop
 
       if (this.scrollRafId) {
-        cancelAnimationFrame(this.scrollRafId);
+        cancelAnimationFrame(this.scrollRafId)
       }
 
       this.scrollRafId = requestAnimationFrame(() => {
-        this.scrollRafId = null;
-        this.scrollTop = nextScrollTop;
+        this.scrollRafId = null
+        this.scrollTop = nextScrollTop
         this.$emit('scroll', {
           scrollTop: nextScrollTop,
           startIndex: this.visibleRange.start,
           endIndex: this.visibleRange.end,
-        });
+        })
 
         if (nextScrollTop <= 0) {
-          this.$emit('reach-start');
+          this.$emit('reach-start')
         }
 
         if (nextScrollTop + this.viewportHeight >= this.totalHeight) {
-          this.$emit('reach-end');
+          this.$emit('reach-end')
         }
-      });
+      })
     },
     getItemStyle(index) {
       return {
         height: `${this.itemHeight}px`,
         transform: `translateY(${index * this.itemHeight}px)`,
-      };
+      }
     },
     getItemKey(item, index) {
       if (typeof this.itemKey === 'function') {
-        return this.itemKey(item, index);
+        return this.itemKey(item, index)
       }
 
       if (this.itemKey && item && Object.prototype.hasOwnProperty.call(item, this.itemKey)) {
-        return item[this.itemKey];
+        return item[this.itemKey]
       }
 
-      return index;
+      return index
     },
     scrollToOffset(offset) {
-      const container = this.$refs.containerRef;
-      if (!container) return;
+      const container = this.$refs.containerRef
+      if (!container) return
 
-      const maxScrollTop = Math.max(0, this.totalHeight - this.viewportHeight);
-      const nextScrollTop = Math.min(Math.max(0, offset), maxScrollTop);
+      const maxScrollTop = Math.max(0, this.totalHeight - this.viewportHeight)
+      const nextScrollTop = Math.min(Math.max(0, offset), maxScrollTop)
 
-      container.scrollTop = nextScrollTop;
-      this.scrollTop = nextScrollTop;
+      container.scrollTop = nextScrollTop
+      this.scrollTop = nextScrollTop
     },
     scrollToIndex(index, align = 'start') {
-      if (!this.items.length) return;
+      if (!this.items.length) return
 
-      const targetIndex = Math.min(Math.max(0, index), this.items.length - 1);
-      const itemTop = targetIndex * this.itemHeight;
-      const itemBottom = itemTop + this.itemHeight;
-      let nextScrollTop = itemTop;
+      const targetIndex = Math.min(Math.max(0, index), this.items.length - 1)
+      const itemTop = targetIndex * this.itemHeight
+      const itemBottom = itemTop + this.itemHeight
+      let nextScrollTop = itemTop
 
       if (align === 'end') {
-        nextScrollTop = itemBottom - this.viewportHeight;
+        nextScrollTop = itemBottom - this.viewportHeight
       } else if (align === 'center') {
-        nextScrollTop = itemTop - (this.viewportHeight - this.itemHeight) / 2;
+        nextScrollTop = itemTop - (this.viewportHeight - this.itemHeight) / 2
       } else if (align === 'auto') {
-        const currentBottom = this.scrollTop + this.viewportHeight;
+        const currentBottom = this.scrollTop + this.viewportHeight
         if (itemTop >= this.scrollTop && itemBottom <= currentBottom) {
-          return;
+          return
         }
-        nextScrollTop = itemTop < this.scrollTop ? itemTop : itemBottom - this.viewportHeight;
+        nextScrollTop = itemTop < this.scrollTop ? itemTop : itemBottom - this.viewportHeight
       }
 
-      this.scrollToOffset(nextScrollTop);
+      this.scrollToOffset(nextScrollTop)
     },
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api'
 
 export default defineComponent({
   props: {
@@ -18,18 +18,18 @@ export default defineComponent({
     durationHuman() {
       const duration = this.duration
       if (!duration) {
-        return '';
+        return ''
       }
-      const seconds = duration.toFixed(1);
+      const seconds = duration.toFixed(1)
       if (seconds < 60) {
-        return `${seconds}s`;
+        return `${seconds}s`
       }
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds - minutes * 60;
-      return `${minutes}m${remainingSeconds}s`;
+      const minutes = Math.floor(seconds / 60)
+      const remainingSeconds = seconds - minutes * 60
+      return `${minutes}m${remainingSeconds}s`
     }
   },
-});
+})
 
 </script>
 

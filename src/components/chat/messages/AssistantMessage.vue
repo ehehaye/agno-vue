@@ -1,7 +1,7 @@
 <template>
   <div class="message-assistant">
     <!-- reasoning block -->
-    <template v-if="message.streamMessage">
+    <template v-if="message.reasoning_content">
       <ReasoningBlock :content="message.reasoning_content" />
     </template>
 
@@ -43,14 +43,14 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { MarkdownRenderer, StreamingIndicator } from '@/components/common';
+import { defineComponent } from '@vue/composition-api'
+import { MarkdownRenderer, StreamingIndicator } from '@/components/common'
 import {
-  ReasoningBlock,
   DurationBlock,
   MemberRunBlock,
+  ReasoningBlock,
   ToolCallBlock,
-} from '@/components/chat/messages/blocks';
+} from '@/components/chat/messages/blocks'
 
 export default defineComponent({
   name: 'AssistantMessage',
@@ -73,7 +73,7 @@ export default defineComponent({
       }),
     },
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

@@ -46,11 +46,11 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { MarkdownRenderer } from '@/components/common';
-import { Collapse } from '@/components/ui';
-import { analyzeContent } from '@/utils/content-utils';
-import { WrenchIcon } from '@/components/icons';
+import { defineComponent } from '@vue/composition-api'
+import { MarkdownRenderer } from '@/components/common'
+import { Collapse } from '@/components/ui'
+import { analyzeContent } from '@/utils/content-utils'
+import { WrenchIcon } from '@/components/icons'
 
 export default defineComponent({
   name: 'ToolCallBlock',
@@ -86,13 +86,13 @@ export default defineComponent({
       }
       const info = analyzeContent(content)
       switch (info.type) {
-        case 'json-object':
-        case 'json-array':
-          return '```json' + '\n' + content + '\n' + '```'
-        case 'code':
-          return '```' + info.language + '\n' + content + '\n' + '```'
-        default:
-          return content
+      case 'json-object':
+      case 'json-array':
+        return '```json' + '\n' + content + '\n' + '```'
+      case 'code':
+        return '```' + info.language + '\n' + content + '\n' + '```'
+      default:
+        return content
       }
     },
   },

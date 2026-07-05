@@ -49,11 +49,11 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { Collapse } from '@/components/ui';
-import { MarkdownRenderer } from '@/components/common';
-import { ReasoningBlock, DurationBlock } from '@/components/chat/messages/blocks';
-import { RobotIcon, SpinnerIcon, CheckCircleIcon } from '@/components/icons';
+import { defineComponent } from '@vue/composition-api'
+import { Collapse } from '@/components/ui'
+import { MarkdownRenderer } from '@/components/common'
+import { DurationBlock, ReasoningBlock } from '@/components/chat/messages/blocks'
+import { CheckCircleIcon, RobotIcon, SpinnerIcon } from '@/components/icons'
 
 export default defineComponent({
   name: 'MemberRunBlock',
@@ -75,15 +75,15 @@ export default defineComponent({
   data() {
     return {
       isExpanded: false,
-    };
+    }
   },
   computed: {
     durationText() {
-      const duration = this.memberRun.metrics?.duration;
-      return duration ? ` in ${duration.toFixed(1)}s` : '';
+      const duration = this.memberRun.metrics?.duration
+      return duration ? ` in ${duration.toFixed(1)}s` : ''
     },
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

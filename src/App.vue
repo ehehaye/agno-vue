@@ -29,12 +29,12 @@
 </template>
 
 <script>
-import { defineComponent, onMounted } from '@vue/composition-api';
-import AppLayout from '@/components/layouts/AppLayout.vue';
-import ChatInterface from '@/components/chat/ChatInterface.vue';
-import SessionSidebar from '@/components/sessions/SessionSidebar.vue';
-import ConfigPanel from '@/components/config/ConfigPanel.vue';
-import { useConfig } from '@/hooks/agno/useConfig';
+import { defineComponent, onMounted } from '@vue/composition-api'
+import AppLayout from '@/components/layouts/AppLayout.vue'
+import ChatInterface from '@/components/chat/ChatInterface.vue'
+import SessionSidebar from '@/components/sessions/SessionSidebar.vue'
+import ConfigPanel from '@/components/config/ConfigPanel.vue'
+import { useConfig } from '@/hooks/agno/useConfig'
 
 export default defineComponent({
   name: 'App',
@@ -45,18 +45,18 @@ export default defineComponent({
     ConfigPanel,
   },
   setup() {
-    const { error, connectionStatus, connect } = useConfig();
+    const { error, connectionStatus, connect } = useConfig()
 
     onMounted(async () => {
-      await connect();
-    });
+      await connect()
+    })
 
     return {
       error,
       connectionStatus,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

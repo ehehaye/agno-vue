@@ -35,8 +35,8 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { ChevronRightIcon } from '@/components/icons';
+import { defineComponent } from '@vue/composition-api'
+import { ChevronRightIcon } from '@/components/icons'
 
 export default defineComponent({
   name: 'Collapse',
@@ -56,26 +56,26 @@ export default defineComponent({
   data() {
     return {
       internalExpanded: this.value,
-    };
+    }
   },
   computed: {
     expanded() {
-      return this.internalExpanded;
+      return this.internalExpanded
     },
   },
   watch: {
     value(newValue) {
-      this.internalExpanded = newValue;
+      this.internalExpanded = newValue
     },
   },
   methods: {
     toggle() {
-      this.internalExpanded = !this.internalExpanded;
-      this.$emit('input', this.internalExpanded);
-      this.$emit('toggle', this.internalExpanded);
+      this.internalExpanded = !this.internalExpanded
+      this.$emit('input', this.internalExpanded)
+      this.$emit('toggle', this.internalExpanded)
     },
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

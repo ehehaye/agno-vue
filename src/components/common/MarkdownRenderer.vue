@@ -5,74 +5,74 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import DOMPurify from 'dompurify';
-import remend from "remend";
-import { marked } from 'marked';
-import hljs from 'highlight.js/lib/common';
-import 'highlight.js/styles/vs.css';
+import { defineComponent } from '@vue/composition-api'
+import DOMPurify from 'dompurify'
+import remend from "remend"
+import { marked } from 'marked'
+import hljs from 'highlight.js/lib/common'
+import 'highlight.js/styles/vs.css'
 
 // https://marked.js.org/using_pro#renderer
 const renderer = {
   blockquote(token) {
-    const inner = this.parser.parse(token.tokens);
-    return `<blockquote class="md-blockquote">${inner}</blockquote>`;
+    const inner = this.parser.parse(token.tokens)
+    return `<blockquote class="md-blockquote">${inner}</blockquote>`
   },
 
   code({ text, lang }) {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    const highlighted = hljs.highlight(text, { language }).value;
-    const langTag = lang ? `<div class="md-code-lang">${lang}</div>` : '';
-    const lines = text.split('\n');
-    const lineNumbers = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
-    return `<div class="md-code-wrapper">${langTag}<div class="md-code-scroll"><div class="md-code-lines">${lineNumbers}</div><pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre></div></div>`;
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+    const highlighted = hljs.highlight(text, { language }).value
+    const langTag = lang ? `<div class="md-code-lang">${lang}</div>` : ''
+    const lines = text.split('\n')
+    const lineNumbers = lines.map((_, i) => `<span>${i + 1}</span>`).join('')
+    return `<div class="md-code-wrapper">${langTag}<div class="md-code-scroll"><div class="md-code-lines">${lineNumbers}</div><pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre></div></div>`
   },
 
   codespan({ text }) {
-    return `<code class="md-code">${text}</code>`;
+    return `<code class="md-code">${text}</code>`
   },
 
   heading({ text, depth }) {
-    return `<h${depth} class="md-h${depth}">${text}</h${depth}>`;
+    return `<h${depth} class="md-h${depth}">${text}</h${depth}>`
   },
 
   hr() {
-    return '<hr class="md-hr" />';
+    return '<hr class="md-hr" />'
   },
 
   image({ href, title, text }) {
-    return `<img class="md-img" src="${href}"${title ? ` title="${title}"` : ''} alt="${text}" />`;
+    return `<img class="md-img" src="${href}"${title ? ` title="${title}"` : ''} alt="${text}" />`
   },
 
   link({ href, title, text }) {
-    return `<a class="md-link" href="${href}"${title ? ` title="${title}"` : ''}>${text}</a>`;
+    return `<a class="md-link" href="${href}"${title ? ` title="${title}"` : ''}>${text}</a>`
   },
 
   list(token) {
-    const tag = token.ordered ? 'ol' : 'ul';
+    const tag = token.ordered ? 'ol' : 'ul'
     const start = token.ordered && token.start !== 1
       ? ` start="${token.start}"`
-      : '';
+      : ''
     const items = token.items
       .map(item => this.listitem(item))
-      .join('');
-    return `<${tag} class="md-list"${start}>${items}</${tag}>`;
+      .join('')
+    return `<${tag} class="md-list"${start}>${items}</${tag}>`
   },
 
   listitem(token) {
-    const inner = this.parser.parse(token.tokens);
-    return `<li class="md-li">${inner}</li>`;
+    const inner = this.parser.parse(token.tokens)
+    return `<li class="md-li">${inner}</li>`
   },
 
   paragraph({ tokens }) {
-    const inner = this.parser.parseInline(tokens);
-    return `<p class="md-p">${inner}</p>`;
+    const inner = this.parser.parseInline(tokens)
+    return `<p class="md-p">${inner}</p>`
   },
 
   table(token) {
     const header = `<tr>${token.header
       .map(cell => this.tablecell(cell))
-      .join('')}</tr>`;
+      .join('')}</tr>`
 
     const body = token.rows
       .map(row =>
@@ -80,28 +80,28 @@ const renderer = {
           .map(cell => this.tablecell(cell))
           .join('')}</tr>`
       )
-      .join('');
+      .join('')
 
     return `
       <table class="md-table">
         <thead>${header}</thead>
         <tbody>${body}</tbody>
       </table>
-    `;
+    `
   },
 
   tablerow(token) {
-    return `<tr class="md-tr">${token.map(cell => this.tablecell(cell)).join('')}</tr>`;
+    return `<tr class="md-tr">${token.map(cell => this.tablecell(cell)).join('')}</tr>`
   },
 
   tablecell(token) {
-    const tag = token.header ? 'th' : 'td';
-    return `<${tag} class="md-${tag}">${this.parser.parseInline(token.tokens)}</${tag}>`;
+    const tag = token.header ? 'th' : 'td'
+    return `<${tag} class="md-${tag}">${this.parser.parseInline(token.tokens)}</${tag}>`
   },
 }
 
-marked.use({ renderer });
-marked.setOptions({ breaks: true, gfm: true });
+marked.use({ renderer })
+marked.setOptions({ breaks: true, gfm: true })
 
 export default defineComponent({
   name: 'MarkdownRenderer',
@@ -115,14 +115,14 @@ export default defineComponent({
     return {
       htmlRafId: null,
       pendingUpdate: false,
-    };
+    }
   },
   watch: {
     content: {
       handler() {
         if (!this.pendingUpdate) {
-          this.pendingUpdate = true;
-          this.updateHtml();
+          this.pendingUpdate = true
+          this.updateHtml()
         }
       },
       immediate: true,
@@ -130,34 +130,34 @@ export default defineComponent({
   },
   beforeDestroy() {
     if (this.htmlRafId) {
-      cancelAnimationFrame(this.htmlRafId);
+      cancelAnimationFrame(this.htmlRafId)
     }
   },
   methods: {
     getHtml() {
-      const { content } = this;
+      const { content } = this
       /** 
        * Avoid flickering by building self-healing markdown content used remend
        * example: "This is **bold text"
        * output: "This is **bold text**"
        */
-      return content ? DOMPurify.sanitize(marked(remend(content))) : '';
+      return content ? DOMPurify.sanitize(marked(remend(content))) : ''
     },
     updateHtml() {
       if (this.htmlRafId) {
-        cancelAnimationFrame(this.htmlRafId);
+        cancelAnimationFrame(this.htmlRafId)
       }
       this.htmlRafId = requestAnimationFrame(() => {
-        this.pendingUpdate = false;
-        this.htmlRafId = null;
+        this.pendingUpdate = false
+        this.htmlRafId = null
         // Optimized for vue2
         // Avoid directly using `v-html` to prevent recursive updates lifecycle. 
         // TODO: Progressively append
-        this.$refs.renderer.innerHTML = this.getHtml();
-      });
+        this.$refs.renderer.innerHTML = this.getHtml()
+      })
     },
   },
-});
+})
 </script>
 
 <style lang="less">

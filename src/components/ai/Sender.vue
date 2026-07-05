@@ -25,11 +25,11 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, nextTick } from '@vue/composition-api';
-import { useAutoFocus } from '@/hooks/useAutoFocus';
-import { isMac } from '@/utils/ua';
-import { usePerfTrack } from '@/hooks/usePerfTrack';
-import { StopIcon, SendIcon } from '@/components/icons';
+import { computed, defineComponent, nextTick, ref } from '@vue/composition-api'
+import { useAutoFocus } from '@/hooks/useAutoFocus'
+import { isMac } from '@/utils/ua'
+import { usePerfTrack } from '@/hooks/usePerfTrack'
+import { SendIcon, StopIcon } from '@/components/icons'
 
 export default defineComponent({
   name: 'Sender',
@@ -45,10 +45,10 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     usePerfTrack()
-    const textareaRef = ref(null);
+    const textareaRef = ref(null)
     const value = ref('')
     const composing = ref(false)
-    const { focus } = useAutoFocus(textareaRef);
+    const { focus } = useAutoFocus(textareaRef)
 
     const rows = computed(() => value.value.split('\n').length || 1)
     const maxRows = computed(() => rows.value >= 3 ? 3 : rows.value)
@@ -59,10 +59,10 @@ export default defineComponent({
         return
       }
       const text = value.value
-      emit('send', text);
-      value.value = '';
-      focus();
-    };
+      emit('send', text)
+      value.value = ''
+      focus()
+    }
 
     const handleKeydown = async (event) => {
       if (composing.value || event.isComposing || event.keyCode === 229) {
@@ -79,7 +79,7 @@ export default defineComponent({
           send()
         }
       }
-    };
+    }
 
     const handleCompositionStart = () => {
       composing.value = true
@@ -100,9 +100,9 @@ export default defineComponent({
       handleCompositionEnd,
       send,
       maxRows,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>
