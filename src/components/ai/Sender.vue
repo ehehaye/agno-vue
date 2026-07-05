@@ -7,6 +7,8 @@
       :rows="`${maxRows}`"
       :placeholder="$t('chat.placeholder')"
       @keydown="handleKeydown"
+      @compositionstart="handleCompositionStart"
+      @compositionend="handleCompositionEnd"
     />
     <div class="input-actions">
       <button
@@ -45,6 +47,7 @@ export default defineComponent({
     usePerfTrack()
     const textareaRef = ref(null);
     const value = ref('')
+    const composing = ref(false)
     const { focus } = useAutoFocus(textareaRef);
 
     const rows = computed(() => value.value.split('\n').length || 1)
@@ -62,6 +65,10 @@ export default defineComponent({
     };
 
     const handleKeydown = async (event) => {
+      if (composing.value || event.isComposing || event.keyCode === 229) {
+        return
+      }
+
       if (event.key === 'Enter') {
         event.preventDefault()
         if ((isMac ? event.metaKey : event.altKey)) {
@@ -74,6 +81,14 @@ export default defineComponent({
       }
     };
 
+    const handleCompositionStart = () => {
+      composing.value = true
+    }
+
+    const handleCompositionEnd = () => {
+      composing.value = false
+    }
+
     return {
       disabled,
       value,
@@ -81,6 +96,8 @@ export default defineComponent({
       textareaRef,
       focus,
       handleKeydown,
+      handleCompositionStart,
+      handleCompositionEnd,
       send,
       maxRows,
     };
