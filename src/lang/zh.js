@@ -16,15 +16,28 @@ export default {
     agent: '智能体',
   },
   chat: {
-    emptyState: '开始一段新对话吧',
-    placeholder: '输入您的问题，按 {key} 发送...',
+    emptyState: '开始一段新会话吧',
+    placeholder: '输入您的问题...',
     sendKey: '{key} 发送',
     send: '发送',
     stop: '停止',
     thinking: '思考中...',
   },
+  toolCall: {
+    arguments: '参数',
+    result: '结果',
+    status: {
+      running: '运行中',
+      completed: '已完成',
+      error: '错误',
+    },
+  },
+  memberRun: {
+    runCompleted: '运行完成',
+    inDuration: '，耗时 {duration}',
+  },
   message: {
     user: 'User',
-    ai: 'AI Assistant',
+    assistant: 'AI Assistant',
   },
 };

@@ -1,42 +1,20 @@
 <template>
   <div
-    class="chat-message hover-lift"
-    :class="[`message-${messageType}`]"
+    class="chat-message"
+    :class="[`message-${message.role}`]"
   >
-    <MessageAvatar :type="messageType" />
+    <Avatar :type="message.role" />
     <div class="message-content">
       <div class="message-header">
-        <span class="message-name">{{
-          isUserMessage ? $t('message.user') : $t('message.ai')
-        }}</span>
+        <span class="message-name">{{ $t(`message.${message.role}`) }}</span>
       </div>
-      <div
-        v-if="thinking"
-        class="thinking-section"
-      >
-        <div class="thinking-header">
-          <span class="thinking-icon">🧐</span>
-          <span class="thinking-label">{{ $t('chat.thinking') }}</span>
-        </div>
-        <div class="thinking-content">{{ thinking }}</div>
-      </div>
-      <MessageBubble
-        v-if="content"
-        :type="messageType"
-      >
-        <div
-          v-if="isUserMessage"
-          class="user-message"
-          v-text="content"
-        />
-        <MarkdownRenderer
-          v-else
-          :content="content"
-        />
-      </MessageBubble>
-      <StreamingIndicator
-        v-else-if="streaming"
-        :style="{ width: '60px' }"
+      <UserMessage
+        v-if="message.role === 'user'"
+        :content="message.content"
+      />
+      <AssistantMessage
+        v-else
+        :message="message.streamMessage"
       />
     </div>
   </div>
@@ -44,44 +22,32 @@
 
 <script>
 import { defineComponent } from '@vue/composition-api';
-import MarkdownRenderer from '@/components/common/MarkdownRenderer.vue';
-import StreamingIndicator from '@/components/common/StreamingIndicator.vue';
-import MessageAvatar from '@/components/ai/MessageAvatar.vue';
-import MessageBubble from '@/components/ai/MessageBubble.vue';
+import Avatar from '@/components/ai/Avatar.vue';
+import AssistantMessage from '@/components/chat/messages/AssistantMessage.vue';
+import UserMessage from '@/components/chat/messages/UserMessage.vue';
 
 export default defineComponent({
   name: 'ChatMessage',
   components: {
-    MarkdownRenderer,
-    MessageAvatar,
-    MessageBubble,
-    StreamingIndicator,
+    Avatar,
+    AssistantMessage,
+    UserMessage,
   },
   props: {
-    type: {
-      type: String,
-      default: 'user',
-      validator: (value) => ['user', 'ai', 'agent', 'assistant'].includes(value),
-    },
-    content: {
-      type: String,
-      default: '',
-    },
-    thinking: {
-      type: String,
-      default: '',
-    },
-    streaming: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  computed: {
-    isUserMessage() {
-      return this.type === 'user';
-    },
-    messageType() {
-      return this.isUserMessage ? 'user' : 'ai';
+    message: {
+      type: Object,
+      default: () => ({
+        content: '',
+        id: '',
+        role: '',
+        timestamp: '',
+        // is null when not role is user
+        streamMessage: {
+          status: '',
+          content: '',
+          reasoning_content: '',
+        },
+      }),
     },
   },
 });
@@ -135,40 +101,6 @@ export default defineComponent({
 
     }
 
-    .thinking-section {
-      background: linear-gradient(135deg, rgba(255, 250, 235, 0.92), rgba(255, 255, 255, 0.9));
-      border-radius: @border-radius-lg;
-      padding: @spacing-sm @spacing-md;
-      margin-bottom: @spacing-sm;
-      font-size: 14px;
-      line-height: 1.6;
-      color: @text-secondary;
-      border: 1px solid fade(@warning-color, 28%);
-      border-left: 3px solid @warning-color;
-      box-shadow: 0 8px 22px rgba(230, 162, 60, 0.12);
-
-      .thinking-header {
-        display: flex;
-        align-items: center;
-        gap: @spacing-xs;
-        margin-bottom: @spacing-xs;
-        color: #e6a23c;
-        font-weight: 600;
-
-        .thinking-icon {
-          font-size: 16px;
-        }
-
-        .thinking-label {
-          font-size: 13px;
-        }
-      }
-
-      .thinking-content {
-        color: @text-color;
-        white-space: pre-wrap;
-      }
-    }
   }
 }
 </style>

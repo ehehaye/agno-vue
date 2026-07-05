@@ -13,7 +13,7 @@
       <header class="layout-header">
         <div class="header-left">
           <button
-            class="aside-toggle"
+            class="aside-toggle ai-button"
             type="button"
             @click="toggleAside"
           >
@@ -24,7 +24,7 @@
         <div class="header-right">
           <select
             v-model="$i18n.locale"
-            class="lang-select"
+            class="lang-select ai-select"
           >
             <option value="zh">中文</option>
             <option value="en">English</option>

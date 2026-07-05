@@ -22,7 +22,7 @@ export default defineComponent({
     },
     messageKey: {
       type: String,
-      default: 'created_at',
+      default: 'id',
     }
   },
   setup(props) {
@@ -57,7 +57,8 @@ export default defineComponent({
           scrollIntoView(messagesEndRef.value);
         }
         return
-      }
+      },
+      { deep: true }
     )
 
     return {

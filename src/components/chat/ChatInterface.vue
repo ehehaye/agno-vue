@@ -1,8 +1,6 @@
 <template>
   <div class="chat-interface">
-    <div
-      class="chat-messages"
-    >
+    <div class="chat-messages">
       <div
         v-if="messages.length === 0"
         class="empty-state"
@@ -14,19 +12,22 @@
         v-else
         :messages="messages"
       >
+        <!-- done messages -->
         <ChatMessage
-          v-for="(msg, index) in messages"
-          :key="index"
-          :type="msg.role"
-          :content="msg.content"
-          :thinking="formatThinking(msg)"
-          :streaming="index === messages.length - 1 && isStreaming"
+          v-for="(message) in messages"
+          :key="message.id"
+          :message="message"
+        />
+        <!-- streaming message -->
+        <ChatMessage
+          v-if="streamingMessage"
+          :message="streamingMessage"
         />
       </StickToBottom>
     </div>
 
     <Sender
-      :streaming="isStreaming"
+      :streaming="!!streamingMessage"
       @cancel="cancelRun"
       @send="handleSend"
     />
@@ -34,12 +35,13 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { useAgnoChat } from '@/hooks/useAgnoChat';
-import { useAgnoSession } from '@/hooks/useAgnoSession';
+import { defineComponent, computed } from '@vue/composition-api';
 import Sender from '@/components/ai/Sender.vue';
 import StickToBottom from '@/components/ai/StickToBottom.vue';
-import ChatMessage from './ChatMessage.vue';
+import ChatMessage from '@/components/chat/ChatMessage.vue';
+import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
+import { useConfig } from '@/hooks/agno/useConfig.js'; 
+import { usePerfTrack } from '@/hooks/usePerfTrack.js';
 
 export default defineComponent({
   name: 'ChatInterface',
@@ -49,32 +51,34 @@ export default defineComponent({
     StickToBottom,
   },
   setup() {
-    const chat = useAgnoChat();
-    const { messages, sendMessage } = chat;
-    const { currentSessionId } = useAgnoSession();
-    const { isStreaming } = useAgnoChat();
+    usePerfTrack()
+    const { currentSessionId } = useConfig();
+    const { messages, currentRun, isStreaming, sendMessage } = useAgentRun();
 
-    const formatThinking = (msg) => {
-      const { extra_data } = msg;
-      if (!extra_data) return '';
-      const { reasoning_content = '', reasoning_messages = [], reasoning_steps = [] } = extra_data;
-      if (reasoning_content) return reasoning_content;
-      if (reasoning_messages.length) return reasoning_messages.map(step => step.reasoning).join('\n');
-      if (reasoning_steps.length) return reasoning_steps.map(step => step.reasoning).join('\n');
-      return '';
-    };
+    const streamingMessage = computed(() => {
+      if (currentRun.value?.status === 'streaming') {
+        return {
+          id: 'streaming',
+          role: 'assistant',
+          content: '',
+          timestamp: 0,
+          streamMessage: currentRun.value,
+        };
+      }
+      return null;
+    });
 
     const handleSend = async (text) => {
       await sendMessage(text);
     };
 
     return {
-      ...chat,
       isStreaming,
       messages,
       currentSessionId,
-      formatThinking,
       handleSend,
+      cancelRun: () => { },
+      streamingMessage,
     };
   },
 });
@@ -110,7 +114,7 @@ export default defineComponent({
     gap: @spacing-md;
     padding: @spacing-md;
     border: 1px solid fade(@border-color, 72%);
-    border-radius: @border-radius-xl 8px 8px @border-radius-xl;
+    border-radius: @border-radius-xl @border-radius-sm @border-radius-sm @border-radius-xl;
     background:
       linear-gradient(180deg, fade(@surface-color, 80%) 0%, fade(@surface-muted, 72%) 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), @shadow-sm;
@@ -149,6 +153,7 @@ export default defineComponent({
     opacity: 0;
     transform: scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -156,10 +161,12 @@ export default defineComponent({
 }
 
 @keyframes empty-icon-float {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-8px);
   }

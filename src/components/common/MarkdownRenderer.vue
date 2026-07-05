@@ -9,18 +9,18 @@ import { defineComponent } from '@vue/composition-api';
 import DOMPurify from 'dompurify';
 import remend from "remend";
 import { marked } from 'marked';
+import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js/lib/common';
+import 'highlight.js/styles/vs.css';
 
-marked.setOptions({
-  highlight (code, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      return hljs.highlight(code, { language: lang }).value;
-    }
-    return hljs.highlightAuto(code).value;
-  },
-  breaks: true,
-  gfm: true,
-});
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code, lang) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+    return hljs.highlight(code, { language }).value
+  }
+}))
+marked.setOptions({ breaks: true, gfm: true });
 
 export default defineComponent({
   name: 'MarkdownRenderer',
@@ -90,8 +90,8 @@ export default defineComponent({
   ::v-deep h4,
   ::v-deep h5,
   ::v-deep h6 {
-    margin-top: 16px;
-    margin-bottom: 8px;
+    margin-top: @spacing-md;
+    margin-bottom: @spacing-sm;
     font-weight: 600;
     line-height: 1.3;
   }
@@ -99,7 +99,7 @@ export default defineComponent({
   ::v-deep h1 {
     font-size: 28px;
     border-bottom: 1px solid @border-color;
-    padding-bottom: 8px;
+    padding-bottom: @spacing-sm;
   }
 
   ::v-deep h2 {
@@ -111,33 +111,33 @@ export default defineComponent({
   }
 
   ::v-deep p {
-    margin: 12px 0;
+    margin: @spacing-sm 0;
   }
 
   ::v-deep ul,
   ::v-deep ol {
-    padding-left: 24px;
-    margin: 12px 0;
+    padding-left: @spacing-lg;
+    margin: @spacing-sm 0;
   }
 
   ::v-deep li {
-    margin: 4px 0;
+    margin: @spacing-xs 0;
   }
 
   ::v-deep code {
     background-color: @code-bg;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: @border-radius-sm;
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
   }
 
   ::v-deep pre {
     background-color: @code-bg;
-    padding: 16px;
-    border-radius: 8px;
+    padding: @spacing-xs;
+    border-radius: @border-radius-md;
     overflow-x: auto;
-    margin: 16px 0;
+    margin: @spacing-xs 0;
 
     code {
       background: none;
@@ -149,25 +149,25 @@ export default defineComponent({
 
   ::v-deep blockquote {
     border-left: 4px solid @primary-color;
-    padding-left: 16px;
-    margin: 16px 0;
-    color: lighten(@text-color, 20%);
+    padding-left: @spacing-md;
+    margin: @spacing-md 0;
+    color: @text-secondary;
   }
 
   ::v-deep table {
     width: 100%;
     border-collapse: collapse;
-    margin: 16px 0;
+    margin: @spacing-md 0;
 
     th,
     td {
       border: 1px solid @border-color;
-      padding: 8px 12px;
+      padding: @spacing-sm @spacing-md;
       text-align: left;
     }
 
     th {
-      background-color: #f5f7fa;
+      background-color: @surface-muted;
       font-weight: 600;
     }
   }
@@ -189,7 +189,7 @@ export default defineComponent({
   ::v-deep hr {
     border: none;
     border-top: 1px solid @border-color;
-    margin: 24px 0;
+    margin: @spacing-lg 0;
   }
 }
 </style>

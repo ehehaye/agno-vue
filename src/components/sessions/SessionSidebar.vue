@@ -3,8 +3,8 @@
     <div class="section-header">
       <h3 class="section-title">{{ $t('sidebar.historySessions') }}</h3>
       <button
-        class="add-btn"
-        @click="newSession"
+        class="add-btn ai-button"
+        @click="setCurrentSessionId(null)"
       >
         +
       </button>
@@ -17,19 +17,24 @@
     >
       <template #default="{ item: session }">
         <div
-          class="session-item hover-lift"
+          class="session-item"
           :class="{ active: session.session_id === currentSessionId }"
           tabindex="0"
-          @click="loadSession(session.session_id)"
-          @keydown.enter.prevent="loadSession(session.session_id)"
-          @keydown.space.prevent="loadSession(session.session_id)"
+          @click="handleLoadSession(session.session_id)"
+          @keydown.enter.prevent="handleLoadSession(session.session_id)"
+          @keydown.space.prevent="handleLoadSession(session.session_id)"
         >
           <div class="session-content">
-            <div class="session-title">{{ formatSessionName(session.session_name) }}</div>
+            <div
+              class="session-title"
+              :title="formatSessionName(session.session_name)"
+            >
+              {{ formatSessionName(session.session_name) }}
+            </div>
             <div class="session-time">{{ formatTime(session.created_at) }}</div>
           </div>
           <button
-            class="delete-btn"
+            class="delete-btn ai-button"
             @click.stop="handleDelete(session.session_id)"
           >
             x
@@ -46,10 +51,12 @@
 </template>
 
 <script>
-import { defineComponent, watch } from '@vue/composition-api';
-import { useAgnoSession } from '@/hooks/useAgnoSession';
-import { useAgnoActions } from '@/hooks/useAgnoActions';
-import VirtualScrollList from '@/components/common/VirtualScrollList.vue';
+import { defineComponent } from '@vue/composition-api';
+import { VirtualScrollList } from '@/components/common';
+import { useSessionManager } from '@/hooks/agno/useSessionManager.js';
+import { useAgentRun } from '@/hooks/agno/useAgentRun.js';
+import { useConfig } from '@/hooks/agno/useConfig';
+import { usePerfTrack } from '@/hooks/usePerfTrack.js';
 
 export default defineComponent({
   name: 'SessionSidebar',
@@ -57,8 +64,10 @@ export default defineComponent({
     VirtualScrollList,
   },
   setup(_, { root }) {
-    const { config } = useAgnoActions();
-    const { sessions, currentSessionId, fetchSessions, loadSession, newSession, deleteSession } = useAgnoSession();
+    usePerfTrack()
+    const { currentSessionId, setCurrentSessionId } = useConfig()
+    const { loadSession } = useAgentRun()
+    const { sessions, selectedSessionIds, deleteSelectedSessions } = useSessionManager();
     const sessionItemHeight = 64;
 
     const formatTime = (time) => new Date(time).toLocaleString();
@@ -78,29 +87,27 @@ export default defineComponent({
       return name
     };
 
-    const handleDelete = async (sessionId) => {
+    const handleLoadSession = (id) => {
+      setCurrentSessionId(id)
+      loadSession(id)
+    }
+
+    const handleDelete = async (id) => {
       if (!window.confirm(root.$t('sidebar.deleteConfirm'))) {
         return;
       }
 
-      await deleteSession(sessionId);
+      // TODO: handle multiple selection
+      selectedSessionIds.value = new Set([id]);
+      await deleteSelectedSessions();
     };
-
-    watch(
-      config,
-      () => {
-        fetchSessions()
-        newSession()
-      },
-      { immediate: true }
-    );
 
     return {
       sessions,
       currentSessionId,
       sessionItemHeight,
-      loadSession,
-      newSession,
+      setCurrentSessionId,
+      handleLoadSession,
       formatTime,
       formatSessionName,
       handleDelete,
@@ -150,9 +157,7 @@ export default defineComponent({
     .session-item {
       position: relative;
       box-sizing: border-box;
-      // 1px for hover transform
-      height: calc(100% - @spacing-xs - 1px);
-      margin-top: 1px;
+      height: calc(100% - @spacing-xs);
       margin-bottom: @spacing-xs;
       padding: 10px 12px;
       border-radius: @border-radius-md;

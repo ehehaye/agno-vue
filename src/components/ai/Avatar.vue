@@ -2,9 +2,9 @@
   <div class="message-avatar">
     <div
       class="avatar"
-      :class="`${avatarType}-avatar`"
+      :class="`${type}-avatar`"
     >
-      <span>{{ label }}</span>
+      <span>{{ type === 'user' ? 'User' : 'AI' }}</span>
     </div>
   </div>
 </template>
@@ -13,20 +13,12 @@
 import { defineComponent } from '@vue/composition-api';
 
 export default defineComponent({
-  name: 'MessageAvatar',
+  name: 'Avatar',
   props: {
     type: {
       type: String,
       default: 'user',
-      validator: (value) => ['user', 'ai', 'agent', 'assistant'].includes(value),
-    },
-  },
-  computed: {
-    avatarType() {
-      return this.type === 'user' ? 'user' : 'ai';
-    },
-    label() {
-      return this.avatarType === 'user' ? 'User' : 'AI';
+      validator: (value) => ['user', 'assistant'].includes(value),
     },
   },
 });
@@ -62,8 +54,8 @@ export default defineComponent({
     color: white;
   }
 
-  .ai-avatar {
-    background: linear-gradient(135deg, #8add66, @success-color);
+  .assistant-avatar {
+    background: linear-gradient(135deg, fade(@primary-color, 70%), @primary-active);
     color: white;
   }
 }

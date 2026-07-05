@@ -1,0 +1,37 @@
+// Reusable Less mixins aligned with the system theme
+
+.flex-center() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-circle(@size: 24px, @bg-color: fade(@primary-color, 12%), @color: @primary-active) {
+  flex-shrink: 0;
+  width: @size;
+  height: @size;
+  border-radius: 50%;
+  background-color: @bg-color;
+  color: @color;
+  .flex-center();
+}
+
+.status-badge() {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  // text-transform: uppercase;
+  padding: 2px @spacing-xs;
+  border-radius: @border-radius-sm;
+  background-color: @surface-hover;
+  color: @text-secondary;
+}
+
+.surface-card() {
+  border: 1px solid @border-light;
+  border-radius: @border-radius-md;
+  background-color: @surface-color;
+  overflow: hidden;
+}
+

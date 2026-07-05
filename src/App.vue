@@ -1,49 +1,40 @@
 <template>
-  <AppLayout>
-    <template #aside>
-      <div
-        v-if="done"
-        class="chat-sidebar"
-      >
-        <SessionSidebar />
-        <ConfigPanel />
-      </div>
-    </template>
+  <div class="app">
+    <AppLayout v-if="connectionStatus === 'connected'">
+      <template #aside>
+        <div class="chat-sidebar">
+          <SessionSidebar />
+          <ConfigPanel />
+        </div>
+      </template>
 
-    <template #main>
-      <div class="dashboard">
-        <div
-          v-if="error"
-          class="init-error"
-        >
-          <h2>{{ $t('app.initFailed') }}</h2>
-          <p>{{ error }}</p>
-          <button
-            :disabled="isInitializing"
-            @click="initializeApp"
-          >
-            {{ $t('app.retry') }}
-          </button>
+      <template #main>
+        <div class="dashboard">
+          <ChatInterface />
         </div>
-        <div
-          v-else-if="isInitializing"
-          class="init-loading"
-        >
-          {{ $t('app.initializing') }}
-        </div>
-        <ChatInterface v-else />
+      </template>
+    </AppLayout>
+
+    <div v-if="connectionStatus === 'connecting'">
+      <h2>Connection Connecting</h2>
+    </div>
+
+    <div v-if="error">
+      <div class="init-error">
+        <h2>Connection Error</h2>
+        <p>{{ error }}</p>
       </div>
-    </template>
-  </AppLayout>
+    </div>
+  </div>
 </template>
 
 <script>
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
-import { useAgnoActions } from '@/hooks/useAgnoActions';
+import { defineComponent, onMounted } from '@vue/composition-api';
 import AppLayout from '@/components/layouts/AppLayout.vue';
 import ChatInterface from '@/components/chat/ChatInterface.vue';
 import SessionSidebar from '@/components/sessions/SessionSidebar.vue';
 import ConfigPanel from '@/components/config/ConfigPanel.vue';
+import { useConfig } from '@/hooks/agno/useConfig';
 
 export default defineComponent({
   name: 'App',
@@ -54,34 +45,25 @@ export default defineComponent({
     ConfigPanel,
   },
   setup() {
-    const done = ref(false);
-    const { error, initialize, isInitializing } = useAgnoActions();
-
-    const initializeApp = async () => {
-      done.value = false;
-      try {
-        await initialize();
-        done.value = true;
-      } catch {
-        done.value = false;
-      }
-    };
+    const { error, connectionStatus, connect } = useConfig();
 
     onMounted(async () => {
-      await initializeApp();
+      await connect();
     });
 
     return {
-      done,
       error,
-      initializeApp,
-      isInitializing,
+      connectionStatus,
     };
   },
 });
 </script>
 
 <style lang="less" scoped>
+.app {
+  height: 100%;
+}
+
 .dashboard {
   display: flex;
   flex-direction: column;

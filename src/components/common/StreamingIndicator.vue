@@ -18,18 +18,18 @@ export default defineComponent({
 .streaming-indicator {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 8px 10px;
+  gap: @spacing-xs;
+  padding: @spacing-sm @spacing-md;
   border-radius: 999px;
-  background: fade(@success-color, 10%);
-  border: 1px solid fade(@success-color, 18%);
+  background: fade(@primary-color, 10%);
+  border: 1px solid fade(@primary-color, 18%);
 
   .dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #8add66, @success-color);
-    box-shadow: 0 0 10px fade(@success-color, 45%);
+    background: linear-gradient(135deg, @primary-hover, @primary-color);
+    box-shadow: 0 0 10px fade(@primary-color, 45%);
     animation: bounce 1.2s infinite ease-in-out both;
 
     &:nth-child(1) {

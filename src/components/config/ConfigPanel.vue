@@ -7,10 +7,10 @@
       <div class="form-item">
         <label class="form-label">{{ $t('sidebar.mode') }}</label>
         <select
-          v-model="config.mode"
+          :value="selectedEntityType"
           :disabled="isStreaming"
-          class="form-select"
-          @change="setMode($event.target.value)"
+          class="form-select ai-select"
+          @change="handleEntityTypeChange"
         >
           <option
             :disabled="!agents.length"
@@ -29,60 +29,70 @@
 
       <div class="form-item">
         <label class="form-label">{{ $t('sidebar.agent') }}</label>
-        <template v-if="config.mode === 'agent'">
-          <select
-            v-model="config.agentId"
-            :disabled="isStreaming"
-            class="form-select"
-            @change="setConfig()"
+        <select
+          :value="selectedEntity?.id || ''"
+          :disabled="isStreaming"
+          class="form-select ai-select"
+          @change="handleEntityChange"
+        >
+          <option
+            v-for="entity in entities"
+            :key="entity.id"
+            :value="entity.id"
           >
-            <option
-              v-for="agent in agents"
-              :key="agent.id"
-              :value="agent.id"
-            >
-              {{ agent.id }}
-            </option>
-          </select>
-        </template>
-
-        <template v-if="config.mode === 'team'">
-          <select
-            v-model="config.teamId"
-            :disabled="isStreaming"
-            class="form-select"
-            @change="setConfig()"
-          >
-            <option
-              v-for="team in teams"
-              :key="team.id"
-              :value="team.id"
-            >
-              {{ team.id }}
-            </option>
-          </select>
-        </template>
+            {{ entity.id }}
+          </option>
+        </select>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { useAgnoActions } from '@/hooks/useAgnoActions';
+import { computed, defineComponent } from '@vue/composition-api';
+import { useAgentRun } from '@/hooks/agno/useAgentRun';  
+import { useConfig } from '@/hooks/agno/useConfig';
+import { usePerfTrack } from '@/hooks/usePerfTrack';
 
 export default defineComponent({
   name: 'ConfigPanel',
   setup() {
-    const { config, agents, teams, isStreaming, setConfig, setMode } = useAgnoActions();
+    usePerfTrack();
+    const { isStreaming } = useAgentRun();
+    const {
+      agents, teams, selectedEntity, selectedEntityType,
+      selectEntity, selectDefaultAgent, selectDefaultTeam,
+    } = useConfig();
+
+    const entities = computed(() =>
+      selectedEntityType.value === 'team' ? teams.value : agents.value
+    );
+
+    const handleEntityTypeChange = (event) => {
+      const type = event.target.value;
+      if (type === 'agent') {
+        selectDefaultAgent();
+      } else if (type === 'team') {
+        selectDefaultTeam();
+      }
+    };
+
+    const handleEntityChange = (event) => {
+      const id = event.target.value;
+      const type = selectedEntityType.value;
+      const entity = entities.value.find((e) => e.id === id);
+      selectEntity(type, id, entity?.name);
+    };
 
     return {
-      config,
       agents,
       teams,
+      entities,
       isStreaming,
-      setConfig,
-      setMode,
+      selectedEntity,
+      selectedEntityType,
+      handleEntityTypeChange,
+      handleEntityChange,
     };
   },
 });
@@ -142,5 +152,4 @@ export default defineComponent({
     }
   }
 }
-
 </style>
