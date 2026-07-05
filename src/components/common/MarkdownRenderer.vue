@@ -22,7 +22,9 @@ const renderer = {
     const language = hljs.getLanguage(lang) ? lang : 'plaintext';
     const highlighted = hljs.highlight(text, { language }).value;
     const langTag = lang ? `<div class="md-code-lang">${lang}</div>` : '';
-    return `<div class="md-code-wrapper">${langTag}<pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre></div>`;
+    const lines = text.split('\n');
+    const lineNumbers = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+    return `<div class="md-code-wrapper">${langTag}<div class="md-code-scroll"><div class="md-code-lines">${lineNumbers}</div><pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre></div></div>`;
   },
 
   codespan({ text }) {
@@ -223,11 +225,34 @@ export default defineComponent({
       border-bottom: 1px solid @border-color;
     }
 
+    .md-code-scroll {
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    .md-code-lines {
+      padding: @spacing-xs @spacing-sm;
+      border-right: 1px solid @border-color;
+      background-color: @surface-muted;
+      user-select: none;
+      min-width: 40px;
+      text-align: right;
+
+      span {
+        display: block;
+        font-size: 14px;
+        line-height: 1.5;
+        color: @text-secondary;
+        font-family: 'Courier New', monospace;
+      }
+    }
+
     .md-pre {
       background: none;
       padding: @spacing-xs;
-      overflow-x: auto;
       margin: 0;
+      flex: 1;
+      overflow-x: auto;
 
       .md-code {
         background: none;
