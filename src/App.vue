@@ -122,9 +122,4 @@ export default defineComponent({
   border-right: 1px solid fade(@border-color, 66%);
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 </style>
