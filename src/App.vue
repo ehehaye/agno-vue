@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <AppLayout v-if="connectionStatus === 'connected'">
+    <AppLayout v-if="connectionStatus === $c.ConnStatus.Connected">
       <template #aside>
         <div class="chat-sidebar">
           <SessionSidebar />
@@ -15,7 +15,7 @@
       </template>
     </AppLayout>
 
-    <div v-if="connectionStatus === 'connecting'">
+    <div v-if="connectionStatus === $c.ConnStatus.Connecting">
       <h2>Connection Connecting</h2>
     </div>
 

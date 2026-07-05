@@ -10,7 +10,7 @@
 
     <template #extra>
       <SpinnerIcon
-        v-if="memberRun.status === 'streaming'"
+        v-if="memberRun.status === $c.RunStatus.Streaming"
         class="member-run-icon member-run-status-streaming"
       />
       <CheckCircleIcon
@@ -26,14 +26,12 @@
 
     <!-- tool call block -->
     <template v-if="memberRun.tool_calls.length">
-      <div class="member-run-tool-calls">
-        <ToolCallBlock
-          v-for="toolCall in memberRun.tool_calls"
-          :key="toolCall.tool.tool_call_id"
-          :status="toolCall.status"
-          :tool="toolCall.tool"
-        />
-      </div>
+      <ToolCallBlock
+        v-for="toolCall in memberRun.tool_calls"
+        :key="toolCall.tool.tool_call_id"
+        :status="toolCall.status"
+        :tool="toolCall.tool"
+      />
     </template>
 
     <!-- content block -->
@@ -42,7 +40,7 @@
     </template>
 
     <!-- duration block -->
-    <div v-if="memberRun.status === 'completed'">
+    <div v-if="memberRun.status === $c.RunStatus.Completed">
       <DurationBlock :duration="memberRun.metrics?.duration" />
     </div>
   </Collapse>

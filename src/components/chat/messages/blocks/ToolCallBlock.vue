@@ -51,6 +51,7 @@ import { MarkdownRenderer } from '@/components/common'
 import { Collapse } from '@/components/ui'
 import { analyzeContent } from '@/utils/content-utils'
 import { WrenchIcon } from '@/components/icons'
+import { $c } from '@/constants'
 
 export default defineComponent({
   name: 'ToolCallBlock',
@@ -64,7 +65,7 @@ export default defineComponent({
     status: {
       type: String,
       default: '',
-      validator: (val) => ['running', 'completed', 'error'].includes(val)
+      validator: (val) => $c.ToolCallStatusList.includes(val)
     },
     tool: {
       type: Object,

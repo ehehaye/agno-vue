@@ -31,12 +31,12 @@
     </template>
 
     <!-- completed block -->
-    <template v-if="message.status === 'completed'">
+    <template v-if="message.status === $c.RunStatus.Completed">
       <DurationBlock :duration="message.metrics?.duration" />
     </template>
 
     <!-- Streaming block -->
-    <template v-if="message.status === 'streaming'">
+    <template v-if="message.status === $c.RunStatus.Streaming">
       <StreamingIndicator :style="{ width: '60px' }" />
     </template>
   </div>

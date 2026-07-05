@@ -42,6 +42,7 @@ import ChatMessage from '@/components/chat/ChatMessage.vue'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig.js' 
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
+import { $c } from '@/constants'
 
 export default defineComponent({
   name: 'ChatInterface',
@@ -56,10 +57,10 @@ export default defineComponent({
     const { messages, currentRun, isStreaming, sendMessage } = useAgentRun()
 
     const streamingMessage = computed(() => {
-      if (currentRun.value?.status === 'streaming') {
+      if (currentRun.value?.status === $c.RunStatus.Streaming) {
         return {
           id: 'streaming',
-          role: 'assistant',
+          role: $c.Role.Assistant,
           content: '',
           timestamp: 0,
           streamMessage: currentRun.value,

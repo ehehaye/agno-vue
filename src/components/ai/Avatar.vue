@@ -11,6 +11,7 @@
 
 <script>
 import { defineComponent } from '@vue/composition-api'
+import { $c } from '@/constants'
 
 export default defineComponent({
   name: 'Avatar',
@@ -18,7 +19,7 @@ export default defineComponent({
     type: {
       type: String,
       default: 'user',
-      validator: (value) => ['user', 'assistant'].includes(value),
+      validator: (value) => $c.Roles.includes(value),
     },
   },
 })

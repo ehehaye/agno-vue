@@ -4,6 +4,7 @@ import { SSEParser } from '@/utils/sse-parser'
 import { useConfig } from '@/hooks/agno/useConfig'
 import { uuid } from '@/utils/index'
 import events, { RuntimeEvents } from '@/hooks/agno/events'
+import { $c } from '@/constants'
 
 const messages = ref([])
 const currentRun = ref(null)
@@ -41,7 +42,7 @@ export function useAgentRun() {
 
   function handleMemberAgentEvent(event, parentRunId) {
     switch (event.event) {
-    case 'RunStarted': {
+    case $c.RunEvent.RunStarted: {
       const runEvent = event
       const memberRun = {
         run_id: runEvent.run_id,
@@ -50,7 +51,7 @@ export function useAgentRun() {
         reasoning_content: '',
         content: '',
         tool_calls: [],
-        status: 'streaming',
+        status: $c.RunStatus.Streaming,
         parent_run_id: parentRunId,
       }
       memberRuns.set(runEvent.run_id, memberRun)
@@ -58,7 +59,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'RunContent': {
+    case $c.RunEvent.RunContent: {
       const contentEvent = event
       const memberRun = memberRuns.get(contentEvent.run_id)
       if (memberRun) {
@@ -69,20 +70,20 @@ export function useAgentRun() {
       break
     }
 
-    case 'ToolCallStarted': {
+    case $c.RunEvent.ToolCallStarted: {
       const toolEvent = event
       const memberRun = memberRuns.get(toolEvent.run_id)
       if (memberRun) {
         memberRun.tool_calls.push({
           tool: toolEvent.tool,
-          status: 'running',
+          status: $c.ToolCallStatus.Running,
         })
         updateMemberRunsInCurrentRun()
       }
       break
     }
 
-    case 'ToolCallCompleted': {
+    case $c.RunEvent.ToolCallCompleted: {
       const toolEvent = event
       const memberRun = memberRuns.get(toolEvent.run_id)
       if (memberRun) {
@@ -91,8 +92,8 @@ export function useAgentRun() {
             ? {
               tool: toolEvent.tool,
               status: toolEvent.tool.tool_call_error
-                ? 'error'
-                : 'completed',
+                ? $c.ToolCallStatus.Error
+                : $c.ToolCallStatus.Completed,
             }
             : tc
         )
@@ -101,13 +102,13 @@ export function useAgentRun() {
       break
     }
 
-    case 'RunCompleted': {
+    case $c.RunEvent.RunCompleted: {
       const completedEvent = event
       const memberRun = memberRuns.get(completedEvent.run_id)
       if (memberRun) {
         memberRun.content = completedEvent.content
         memberRun.reasoning_content = completedEvent.reasoning_content
-        memberRun.status = 'completed'
+        memberRun.status = $c.RunStatus.Completed
         memberRun.metrics = {
           time_to_first_token: completedEvent.metrics?.time_to_first_token,
           duration: completedEvent.metrics?.duration,
@@ -121,7 +122,7 @@ export function useAgentRun() {
 
   function handleTeamEvent(event) {
     switch (event.event) {
-    case 'TeamRunStarted': {
+    case $c.RunEvent.TeamRunStarted: {
       const runEvent = event
       onSessionIdUpdate(runEvent)
       const newRun = {
@@ -134,7 +135,7 @@ export function useAgentRun() {
         content: '',
         tool_calls: [],
         member_runs: [],
-        status: 'streaming',
+        status: $c.RunStatus.Streaming,
         metrics: {
           model: runEvent.model,
           provider: runEvent.model_provider,
@@ -145,7 +146,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'TeamRunContent': {
+    case $c.RunEvent.TeamRunContent: {
       const contentEvent = event
       if (!currentRun.value) break
       currentRun.value = {
@@ -158,7 +159,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'TeamToolCallStarted': {
+    case $c.RunEvent.TeamToolCallStarted: {
       const toolEvent = event
       if (!currentRun.value) break
       currentRun.value = {
@@ -171,7 +172,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'TeamToolCallCompleted': {
+    case $c.RunEvent.TeamToolCallCompleted: {
       const toolEvent = event
       if (!currentRun.value) break
       currentRun.value = {
@@ -181,8 +182,8 @@ export function useAgentRun() {
             ? {
               tool: toolEvent.tool,
               status: toolEvent.tool.tool_call_error
-                ? 'error'
-                : 'completed',
+                ? $c.ToolCallStatus.Error
+                : $c.ToolCallStatus.Completed,
             }
             : tc
         ),
@@ -190,7 +191,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'TeamRunCompleted': {
+    case $c.RunEvent.TeamRunCompleted: {
       const completedEvent = event
       const prevRun = currentRun.value
       if (prevRun) {
@@ -198,7 +199,7 @@ export function useAgentRun() {
           ...prevRun,
           content: completedEvent.content,
           reasoning_content: completedEvent.reasoning_content,
-          status: 'completed',
+          status: $c.RunStatus.Completed,
           metrics: {
             ...prevRun.metrics,
             time_to_first_token: completedEvent.metrics.time_to_first_token,
@@ -207,7 +208,7 @@ export function useAgentRun() {
         }
         const assistantMessage = {
           id: uuid(),
-          role: 'assistant',
+          role: $c.Role.Assistant,
           content: completedEvent.content,
           timestamp: Date.now(),
           streamMessage: finalRun,
@@ -230,7 +231,7 @@ export function useAgentRun() {
     }
 
     switch (event.event) {
-    case 'RunStarted': {
+    case $c.RunEvent.RunStarted: {
       const runEvent = event
       onSessionIdUpdate(runEvent)
       const newRun = {
@@ -243,7 +244,7 @@ export function useAgentRun() {
         content: '',
         tool_calls: [],
         member_runs: [],
-        status: 'streaming',
+        status: $c.RunStatus.Streaming,
         metrics: {
           model: runEvent.model,
           provider: runEvent.model_provider,
@@ -253,7 +254,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'RunContent': {
+    case $c.RunEvent.RunContent: {
       const contentEvent = event
       if (!currentRun.value) break
       currentRun.value = {
@@ -266,7 +267,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'ToolCallStarted': {
+    case $c.RunEvent.ToolCallStarted: {
       const toolEvent = event
       if (!currentRun.value) break
       currentRun.value = {
@@ -279,7 +280,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'ToolCallCompleted': {
+    case $c.RunEvent.ToolCallCompleted: {
       const toolEvent = event
       if (!currentRun.value) break
       currentRun.value = {
@@ -289,8 +290,8 @@ export function useAgentRun() {
             ? {
               tool: toolEvent.tool,
               status: toolEvent.tool.tool_call_error
-                ? 'error'
-                : 'completed',
+                ? $c.ToolCallStatus.Error
+                : $c.ToolCallStatus.Completed,
             }
             : tc
         ),
@@ -298,7 +299,7 @@ export function useAgentRun() {
       break
     }
 
-    case 'RunCompleted': {
+    case $c.RunEvent.RunCompleted: {
       const completedEvent = event
       const prevRun = currentRun.value
       if (prevRun) {
@@ -306,7 +307,7 @@ export function useAgentRun() {
           ...prevRun,
           content: completedEvent.content,
           reasoning_content: completedEvent.reasoning_content,
-          status: 'completed',
+          status: $c.RunStatus.Completed,
           metrics: {
             ...prevRun.metrics,
             time_to_first_token: completedEvent.metrics.time_to_first_token,
@@ -315,7 +316,7 @@ export function useAgentRun() {
         }
         const assistantMessage = {
           id: uuid(),
-          role: 'assistant',
+          role: $c.Role.Assistant,
           content: completedEvent.content,
           timestamp: Date.now(),
           streamMessage: finalRun,
@@ -476,7 +477,7 @@ export function useAgentRun() {
 
         const assistantMessage = run.messages?.find(
           (m) =>
-            m.role === 'assistant' && m.tool_calls && m.tool_calls.length > 0
+            m.role === $c.Role.Assistant && m.tool_calls && m.tool_calls.length > 0
         )
 
         let toolCalls = []
@@ -504,7 +505,7 @@ export function useAgentRun() {
               approval_type: null,
               approval_id: null,
             },
-            status: tool.tool_call_error ? 'error' : 'completed',
+            status: tool.tool_call_error ? $c.ToolCallStatus.Error : $c.ToolCallStatus.Completed,
           }))
         } else if (assistantMessage?.tool_calls) {
           toolCalls = assistantMessage.tool_calls.map((tc) => ({
@@ -530,7 +531,7 @@ export function useAgentRun() {
               approval_type: null,
               approval_id: null,
             },
-            status: 'completed',
+            status: $c.ToolCallStatus.Completed,
           }))
         }
 
@@ -564,7 +565,7 @@ export function useAgentRun() {
                     approval_type: null,
                     approval_id: null,
                   },
-                  status: tool.tool_call_error ? 'error' : 'completed',
+                  status: tool.tool_call_error ? $c.ToolCallStatus.Error : $c.ToolCallStatus.Completed,
                 })
               })
             }
@@ -576,7 +577,7 @@ export function useAgentRun() {
               reasoning_content: childRun.reasoning_content || '',
               content: childRun.content || '',
               tool_calls: memberToolCalls,
-              status: 'completed',
+              status: $c.RunStatus.Completed,
               parent_run_id: run.run_id,
               metrics: {
                 time_to_first_token: childRun.metrics?.time_to_first_token,
@@ -604,7 +605,7 @@ export function useAgentRun() {
             Date.now() / 1000
           loadedMessages.push({
             id: uuid(),
-            role: 'assistant',
+            role: $c.Role.Assistant,
             content: run.content || '',
             timestamp: msgTime * 1000,
             streamMessage: {
@@ -617,7 +618,7 @@ export function useAgentRun() {
               content: run.content || '',
               tool_calls: toolCalls,
               member_runs: memberRunsForThisRun,
-              status: 'completed',
+              status: $c.RunStatus.Completed,
               metrics: {
                 time_to_first_token: run.metrics?.time_to_first_token,
                 duration: run.metrics?.duration,

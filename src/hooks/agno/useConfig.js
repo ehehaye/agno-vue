@@ -1,4 +1,5 @@
 import { computed, ref } from '@vue/composition-api'
+import { $c } from '@/constants'
 
 const DEFAULT_SERVER_URL = `${window.location.protocol}//${window.location.host}/agno`
 
@@ -6,7 +7,7 @@ const serverUrl = ref(DEFAULT_SERVER_URL)
 const selectedEntity = ref(null)
 const selectedEntityType = computed(() => selectedEntity.value?.type)
 const currentSessionId = ref(null)
-const connectionStatus = ref('disconnected')
+const connectionStatus = ref($c.ConnStatus.Disconnected)
 const agents = ref([])
 const teams = ref([])
 const error = ref(null)
@@ -22,7 +23,7 @@ export function useConfig() {
   }
 
   const disconnect = () => {
-    connectionStatus.value = 'disconnected'
+    connectionStatus.value = $c.ConnStatus.Disconnected
     agents.value = []
     teams.value = []
     error.value = null
@@ -36,7 +37,7 @@ export function useConfig() {
       return
     }
 
-    connectionStatus.value = 'connecting'
+    connectionStatus.value = $c.ConnStatus.Connecting
     error.value = null
     agents.value = []
     teams.value = []
@@ -60,7 +61,7 @@ export function useConfig() {
 
       agents.value = agentsData
       teams.value = teamsData
-      connectionStatus.value = 'connected'
+      connectionStatus.value = $c.ConnStatus.Connected
 
       if (agents.value.length > 0) {
         selectDefaultAgent()
@@ -70,12 +71,12 @@ export function useConfig() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect to server'
       error.value = errorMessage
-      connectionStatus.value = 'error'
+      connectionStatus.value = $c.ConnStatus.Error
     }
   }
 
   const refresh = async () => {
-    if (!serverUrl.value.trim() || connectionStatus.value !== 'connected') {
+    if (!serverUrl.value.trim() || connectionStatus.value !== $c.ConnStatus.Connected) {
       return
     }
 
