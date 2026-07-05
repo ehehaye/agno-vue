@@ -9,17 +9,15 @@ const messages = ref([]);
 const currentRun = ref(null);
 const isStreaming = ref(false);
 const error = ref(null);
-const sessionId = ref(null);
 
 export function useAgentRun() {
-  const { serverUrl, connectionStatus, selectedEntity, currentSessionId } =
+  const { serverUrl, connectionStatus, selectedEntity, currentSessionId, setCurrentSessionId } =
     useConfig();
 
   const parser = new SSEParser();
   const memberRuns = new Map();
 
-  function onSessionCreated(runEvent) {
-    sessionId.value = runEvent.session_id;
+  function onSessionIdUpdate(runEvent) {
     const session = {
       agent_id: runEvent.agent_id,
       created_at: new Date(runEvent.created_at * 1000).toISOString(),
@@ -27,7 +25,10 @@ export function useAgentRun() {
       session_name: messages.value[0]?.content || '',
       session_type: selectedEntity.value?.type,
     };
-    events.emit(RuntimeEvents.SESSION_CREATED, session);
+    if (session.session_id !== currentSessionId.value) {
+      setCurrentSessionId(session.session_id);
+      events.emit(RuntimeEvents.SESSION_CREATED, session);
+    }
   }
 
   function updateMemberRunsInCurrentRun() {
@@ -122,7 +123,7 @@ export function useAgentRun() {
     switch (event.event) {
       case 'TeamRunStarted': {
         const runEvent = event;
-        onSessionCreated(runEvent);
+        onSessionIdUpdate(runEvent);
         const newRun = {
           run_id: runEvent.run_id,
           session_id: runEvent.session_id,
@@ -231,7 +232,7 @@ export function useAgentRun() {
     switch (event.event) {
       case 'RunStarted': {
         const runEvent = event;
-        onSessionCreated(runEvent);
+        onSessionIdUpdate(runEvent);
         const newRun = {
           run_id: runEvent.run_id,
           session_id: runEvent.session_id,
@@ -362,8 +363,8 @@ export function useAgentRun() {
       const formData = new URLSearchParams();
       formData.append('message', content);
       formData.append('stream', 'true');
-      if (sessionId.value) {
-        formData.append('session_id', sessionId.value);
+      if (currentSessionId.value) {
+        formData.append('session_id', currentSessionId.value);
       }
 
       const endpoint =
@@ -413,7 +414,6 @@ export function useAgentRun() {
     // TODO: AbortController
     messages.value = [];
     currentRun.value = null;
-    sessionId.value = null;
     error.value = null;
     memberRuns.clear();
   }
@@ -630,7 +630,6 @@ export function useAgentRun() {
       });
 
       messages.value = loadedMessages;
-      sessionId.value = targetSessionId;
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to load session';
@@ -645,7 +644,6 @@ export function useAgentRun() {
     currentRun,
     isStreaming,
     error,
-    sessionId,
     sendMessage,
     loadSession,
     clearMessages,
