@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed } from '@vue/composition-api';
+import { defineComponent, ref, computed, nextTick } from '@vue/composition-api';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { isMac } from '@/utils/ua';
 import { usePerfTrack } from '@/hooks/usePerfTrack';
@@ -61,11 +61,13 @@ export default defineComponent({
       focus();
     };
 
-    const handleKeydown = (event) => {
+    const handleKeydown = async (event) => {
       if (event.key === 'Enter') {
         event.preventDefault()
         if ((isMac ? event.metaKey : event.altKey)) {
           value.value += '\n'
+          await nextTick()
+          textareaRef.value.scrollTop = textareaRef.value.scrollHeight
         } else {
           send()
         }
