@@ -9,17 +9,94 @@ import { defineComponent } from '@vue/composition-api';
 import DOMPurify from 'dompurify';
 import remend from "remend";
 import { marked } from 'marked';
-import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js/lib/common';
 import 'highlight.js/styles/vs.css';
 
-marked.use(markedHighlight({
-  langPrefix: 'hljs language-',
-  highlight(code, lang) {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-    return hljs.highlight(code, { language }).value
-  }
-}))
+// https://marked.js.org/using_pro#renderer
+const renderer = {
+  blockquote({ text }) {
+    return `<blockquote class="md-blockquote">${text}</blockquote>`;
+  },
+
+  code({ text, lang }) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+    const highlighted = hljs.highlight(text, { language }).value;
+    return `<pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre>`;
+  },
+
+  codespan({ text }) {
+    return `<code class="md-code">${text}</code>`;
+  },
+
+  heading({ text, depth }) {
+    return `<h${depth} class="md-h${depth}">${text}</h${depth}>`;
+  },
+
+  hr() {
+    return '<hr class="md-hr" />';
+  },
+
+  image({ href, title, text }) {
+    return `<img class="md-img" src="${href}"${title ? ` title="${title}"` : ''} alt="${text}" />`;
+  },
+
+  link({ href, title, text }) {
+    return `<a class="md-link" href="${href}"${title ? ` title="${title}"` : ''}>${text}</a>`;
+  },
+
+  list(token) {
+    const tag = token.ordered ? 'ol' : 'ul';
+    const start = token.ordered && token.start !== 1
+      ? ` start="${token.start}"`
+      : '';
+    const items = token.items
+      .map(item => this.listitem(item))
+      .join('');
+    return `<${tag} class="md-list"${start}>${items}</${tag}>`;
+  },
+
+  listitem(token) {
+    const inner = this.parser.parse(token.tokens);
+    return `<li class="md-li">${inner}</li>`;
+  },
+
+  paragraph({ tokens }) {
+    const inner = this.parser.parseInline(tokens);
+    return `<p class="md-p">${inner}</p>`;
+  },
+
+  table(token) {
+    const header = `<tr>${token.header
+      .map(cell => this.tablecell(cell))
+      .join('')}</tr>`;
+
+    const body = token.rows
+      .map(row =>
+        `<tr>${row
+          .map(cell => this.tablecell(cell))
+          .join('')}</tr>`
+      )
+      .join('');
+
+    return `
+      <table class="md-table">
+        <thead>${header}</thead>
+        <tbody>${body}</tbody>
+      </table>
+    `;
+  },
+
+  tablerow(token) {
+    return `<tr class="md-tr">${token.map(cell => this.tablecell(cell)).join('')}</tr>`;
+  },
+
+  tablecell(token) {
+    const tag = token.header ? 'th' : 'td';
+    return `<${tag} class="md-${tag}">${this.parser.parseInline(token.tokens)}</${tag}>`;
+  },
+}
+
+marked.use({ renderer });
 marked.setOptions({ breaks: true, gfm: true });
 
 export default defineComponent({
@@ -79,52 +156,51 @@ export default defineComponent({
 });
 </script>
 
-<style lang="less" scoped>
+<style lang="less">
 .markdown-renderer {
   line-height: 1.8;
   color: @text-color;
 
-  ::v-deep h1,
-  ::v-deep h2,
-  ::v-deep h3,
-  ::v-deep h4,
-  ::v-deep h5,
-  ::v-deep h6 {
+  .md-h1,
+  .md-h2,
+  .md-h3,
+  .md-h4,
+  .md-h5,
+  .md-h6 {
     margin-top: @spacing-md;
     margin-bottom: @spacing-sm;
     font-weight: 600;
     line-height: 1.3;
   }
 
-  ::v-deep h1 {
+  .md-h1 {
     font-size: 28px;
     border-bottom: 1px solid @border-color;
     padding-bottom: @spacing-sm;
   }
 
-  ::v-deep h2 {
+  .md-h2 {
     font-size: 24px;
   }
 
-  ::v-deep h3 {
+  .md-h3 {
     font-size: 20px;
   }
 
-  ::v-deep p {
+  .md-p {
     margin: @spacing-sm 0;
   }
 
-  ::v-deep ul,
-  ::v-deep ol {
+  .md-list {
     padding-left: @spacing-lg;
     margin: @spacing-sm 0;
   }
 
-  ::v-deep li {
+  .md-li {
     margin: @spacing-xs 0;
   }
 
-  ::v-deep code {
+  .md-code {
     background-color: @code-bg;
     padding: 2px 6px;
     border-radius: @border-radius-sm;
@@ -132,14 +208,14 @@ export default defineComponent({
     font-size: 0.9em;
   }
 
-  ::v-deep pre {
+  .md-pre {
     background-color: @code-bg;
     padding: @spacing-xs;
     border-radius: @border-radius-md;
     overflow-x: auto;
     margin: @spacing-xs 0;
 
-    code {
+    .md-code {
       background: none;
       padding: 0;
       font-size: 14px;
@@ -147,32 +223,32 @@ export default defineComponent({
     }
   }
 
-  ::v-deep blockquote {
+  .md-blockquote {
     border-left: 4px solid @primary-color;
     padding-left: @spacing-md;
     margin: @spacing-md 0;
     color: @text-secondary;
   }
 
-  ::v-deep table {
+  .md-table {
     width: 100%;
     border-collapse: collapse;
     margin: @spacing-md 0;
 
-    th,
-    td {
+    .md-th,
+    .md-td {
       border: 1px solid @border-color;
       padding: @spacing-sm @spacing-md;
       text-align: left;
     }
 
-    th {
+    .md-th {
       background-color: @surface-muted;
       font-weight: 600;
     }
   }
 
-  ::v-deep a {
+  .md-link {
     color: @primary-color;
     text-decoration: none;
 
@@ -181,12 +257,12 @@ export default defineComponent({
     }
   }
 
-  ::v-deep img {
+  .md-img {
     max-width: 100%;
     height: auto;
   }
 
-  ::v-deep hr {
+  .md-hr {
     border: none;
     border-top: 1px solid @border-color;
     margin: @spacing-lg 0;
