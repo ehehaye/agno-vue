@@ -27,7 +27,7 @@
     </div>
 
     <Sender
-      :streaming="!!streamingMessage"
+      :streaming="isStreaming"
       @cancel="cancelRun"
       @send="handleSend"
     />
