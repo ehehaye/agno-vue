@@ -1,5 +1,8 @@
 <template>
-  <div class="message-assistant">
+  <div
+    :id="`assistant-message-${message.id}`"
+    class="message-assistant"
+  >
     <!-- reasoning block -->
     <template v-if="message.reasoning_content">
       <ReasoningBlock :content="message.reasoning_content" />

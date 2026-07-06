@@ -8,28 +8,29 @@
         <div class="empty-icon">💬</div>
         <p class="empty-text">{{ $t('chat.emptyState') }}</p>
       </div>
-      <StickToBottom
-        v-else
-        :messages="messages"
-      >
-        <div class="message-list">
-          <!-- done messages -->
-          <ChatMessage
-            v-for="(message) in messages"
-            :id="message.id"
-            :key="message.id"
-            :message="message"
-          />
-          <!-- streaming message -->
-          <ChatMessage
-            v-if="streamingMessage"
-            :message="streamingMessage"
-          />
-        </div>
-      </StickToBottom>
-      <HistoryQuestionRail
-        :messages="userMessages"
-      />
+      <template v-else>
+        <StickToBottom :messages="messages">
+          <div class="message-list">
+            <!-- done messages -->
+            <ChatMessage
+              v-for="(message) in messages"
+              :id="`message-${message.id}`"
+              :key="message.id"
+              :message="message"
+            />
+            <!-- streaming message -->
+            <ChatMessage
+              v-if="streamingMessage"
+              :message="streamingMessage"
+            />
+          </div>
+        </StickToBottom>
+        <HistoryQuestionRail
+          :messages="userMessages"
+          message-selector=".user-message"
+          container-selector=".stick-to-bottom"
+        />
+      </template>
     </div>
 
     <Sender

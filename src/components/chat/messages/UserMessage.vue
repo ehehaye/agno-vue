@@ -1,5 +1,6 @@
 <template>
   <div
+    :id="`user-message-${message.id}`"
     class="user-message"
     v-text="message.content"
   />
@@ -14,6 +15,7 @@ export default defineComponent({
     message: {
       type: Object,
       default: () => ({
+        id: '',
         content: '',
       }),
     },
