@@ -35,6 +35,9 @@ importers:
       vue-i18n:
         specifier: ^8.28.2
         version: 8.28.2(vue@2.6.14)
+      vue-scrollactive:
+        specifier: ^0.9.3
+        version: 0.9.3
     devDependencies:
       code-inspector-plugin:
         specifier: ^1.6.4
@@ -693,6 +696,9 @@ packages:
     resolution: {integrity: sha512-Asa2krT+XTPZINCS+2QcyS8WTkObE77RwkydwF7h6DmnKqbvlalz93m/dnphUyCa6SWSP51VgtEUf2FN+gelFQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  bezier-easing@2.1.0:
+    resolution: {integrity: sha512-gbIqZ/eslnUFC1tjEvtz0sgx+xTK20wDnYMIA27VA04R7w6xxXQPZDbibjA9DTWZRA2CXtwHykkVzlCaAJAZig==}
 
   bluebird@3.7.2:
     resolution: {integrity: sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==}
@@ -1722,6 +1728,9 @@ packages:
     peerDependencies:
       vue: ^2
 
+  vue-scrollactive@0.9.3:
+    resolution: {integrity: sha512-W7Z2EQGDjnvgZ4h+/bpRVjiVU3bKWQDmT9f0bUL+zq3C/VSZaQiQ+qzWlMYDEpJbm13wJ6KIE6ry3HKLVyU4cQ==}
+
   vue-template-babel-compiler@1.2.0:
     resolution: {integrity: sha512-CScBSX1/wCdmmZ/Lvj/63p2CCVTS0FMj0F69VRBo73CuJrjvPAPGmeNJ7D/cwt/VS2PduowRWbO8N4Zh4Z3b0g==}
     engines: {node: '>=12.0.0'}
@@ -2472,6 +2481,8 @@ snapshots:
   balanced-match@1.0.2: {}
 
   baseline-browser-mapping@2.10.29: {}
+
+  bezier-easing@2.1.0: {}
 
   bluebird@3.7.2: {}
 
@@ -3230,6 +3241,10 @@ snapshots:
   vue-i18n@8.28.2(vue@2.6.14):
     dependencies:
       vue: 2.6.14
+
+  vue-scrollactive@0.9.3:
+    dependencies:
+      bezier-easing: 2.1.0
 
   vue-template-babel-compiler@1.2.0(vue-template-compiler@2.6.14):
     dependencies:

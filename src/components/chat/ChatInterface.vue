@@ -150,7 +150,6 @@ export default defineComponent({
       .empty-icon {
         font-size: 48px;
         margin-bottom: @spacing-md;
-        filter: drop-shadow(0 12px 20px rgba(63, 126, 232, 0.2));
         animation: empty-icon-float 2.8s ease-in-out infinite;
       }
 

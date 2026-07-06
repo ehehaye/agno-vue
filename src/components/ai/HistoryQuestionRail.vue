@@ -68,16 +68,14 @@ export default defineComponent({
     width @transition-base,
     padding @transition-base,
     border-color @transition-fast,
-    background-color @transition-fast,
-    box-shadow @transition-fast;
+    background-color @transition-fast;
 
   &:hover,
   &:focus-visible {
     width: 220px;
     padding: 0 @spacing-sm 0 @spacing-md;
-    border-color: fade(@primary-color, 30%);
-    background: fade(@surface-color, 94%);
-    box-shadow: @shadow-sm;
+    border-color: @primary-color;
+    background: @surface-color;
     outline: none;
 
     .question-line {
@@ -97,7 +95,6 @@ export default defineComponent({
   flex-shrink: 0;
   border-radius: 999px;
   background: fade(@primary-color, 72%);
-  box-shadow: 0 2px 8px fade(@primary-color, 18%);
   transition: background-color @transition-fast;
 }
 

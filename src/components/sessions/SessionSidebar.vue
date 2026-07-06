@@ -165,10 +165,9 @@ export default defineComponent({
       transition:
         transform @transition-fast,
         background-color @transition-base,
-        border-color @transition-fast,
-        box-shadow @transition-base;
-      border: 1px solid fade(@border-color, 68%);
-      background-color: fade(@surface-color, 58%);
+        border-color @transition-fast;
+      border: 1px solid @border-color;
+      background-color: @surface-color;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -176,19 +175,20 @@ export default defineComponent({
 
       &:hover {
         background-color: @surface-hover;
-        border-color: fade(@primary-color, 32%);
-        box-shadow: 0 10px 24px rgba(63, 126, 232, 0.12);
+        border-color: @primary-color;
       }
 
       &.active {
-        background: linear-gradient(135deg, fade(@primary-color, 14%), fade(@primary-hover, 8%));
-        border-color: fade(@primary-color, 58%);
-        box-shadow: inset 3px 0 0 @primary-color, 0 8px 20px rgba(63, 126, 232, 0.12);
+        background: fade(@primary-color, 8%);
+        border-color: @primary-color;
+        border-left-width: 3px;
+        border-left-color: @primary-color;
       }
 
       &:focus-visible {
-        border-color: fade(@primary-color, 70%);
-        box-shadow: @focus-shadow, 0 10px 24px rgba(63, 126, 232, 0.12);
+        border-color: @primary-color;
+        outline: 2px solid rgba(63, 126, 232, 0.2);
+        outline-offset: -1px;
       }
 
       &:hover .delete-btn,
@@ -225,8 +225,7 @@ export default defineComponent({
           opacity @transition-fast,
           transform @transition-fast,
           background-color @transition-fast,
-          color @transition-fast,
-          box-shadow @transition-base;
+          color @transition-fast;
         padding: 0;
         width: 26px;
         height: 26px;
@@ -234,7 +233,6 @@ export default defineComponent({
         border-color: transparent;
         background: fade(@error-color, 10%);
         color: @error-color;
-        box-shadow: none;
         line-height: 1;
         display: flex;
         align-items: center;
@@ -243,18 +241,17 @@ export default defineComponent({
         &:hover {
           background: @error-color;
           color: #fff;
-          box-shadow: 0 8px 18px fade(@error-color, 28%);
         }
 
         &:active {
           transform: scale(0.94);
-          box-shadow: none;
         }
 
         &:focus-visible {
           opacity: 1;
           transform: scale(1);
-          box-shadow: 0 0 0 4px fade(@error-color, 18%);
+          outline: 2px solid fade(@error-color, 30%);
+          outline-offset: 2px;
         }
       }
     }

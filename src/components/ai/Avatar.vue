@@ -39,15 +39,12 @@ export default defineComponent({
     font-weight: 600;
     font-size: 13px;
     letter-spacing: 0.02em;
-    box-shadow: @shadow-sm;
     transition:
-      transform @transition-base,
-      box-shadow @transition-base;
+      transform @transition-base;
   }
 
   .avatar:hover {
     transform: scale(1.06) rotate(-2deg);
-    box-shadow: @shadow-md;
   }
 
   .user-avatar {

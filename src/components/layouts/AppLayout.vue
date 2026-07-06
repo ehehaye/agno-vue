@@ -74,16 +74,13 @@ export default defineComponent({
     width: 300px;
     height: 100%;
     flex: 0 0 300px;
-    border-right: 1px solid fade(@border-color, 70%);
+    border-right: 1px solid @border-color;
     overflow: hidden;
-    background: fade(@surface-color, 70%);
-    backdrop-filter: blur(18px);
-    box-shadow: 12px 0 34px rgba(31, 41, 55, 0.06);
+    background: @surface-color;
     transition:
       width @transition-base,
       flex-basis @transition-base,
-      border-color @transition-fast,
-      box-shadow @transition-base;
+      border-color @transition-fast;
 
     .layout-aside-inner {
       width: 300px;
@@ -109,27 +106,12 @@ export default defineComponent({
     flex: 0 0 @header-height;
     position: relative;
     z-index: 2;
-    background:
-      linear-gradient(135deg, fade(@surface-color, 92%) 0%, fade(@surface-muted, 86%) 100%),
-      radial-gradient(circle at 18% 20%, fade(@primary-hover, 18%), transparent 28%);
+    background: @surface-color;
     color: @text-color;
     padding: 0 18px;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid fade(@border-color, 72%);
-    box-shadow: 0 8px 24px rgba(31, 41, 55, 0.06);
-    backdrop-filter: blur(18px);
     justify-content: space-between;
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(90deg, fade(@primary-color, 10%), transparent 28%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.58), transparent 72%);
-    }
 
     .header-title {
       height: 32px;
@@ -154,11 +136,9 @@ export default defineComponent({
       align-items: center;
       justify-content: center;
       color: @primary-color;
-      background:
-        linear-gradient(135deg, fade(@surface-color, 88%), fade(@surface-muted, 82%));
-      border-color: fade(@border-color, 88%);
+      background: @surface-color;
+      border-color: @border-color;
       border-radius: @border-radius-md;
-      box-shadow: 0 4px 14px rgba(31, 41, 55, 0.06);
 
       .toggle-icon {
         position: relative;
@@ -217,9 +197,8 @@ export default defineComponent({
         width: 108px;
         padding: 6px 10px;
         color: @text-color;
-        background-color: fade(@surface-color, 82%);
-        border-color: fade(@border-color, 86%);
-        box-shadow: 0 4px 14px rgba(31, 41, 55, 0.06);
+        background-color: @surface-color;
+        border-color: @border-color;
       }
     }
   }
@@ -229,9 +208,7 @@ export default defineComponent({
     min-height: 0;
     overflow: hidden;
     padding: 0;
-    background:
-      linear-gradient(180deg, fade(@surface-color, 82%) 0%, fade(@surface-muted, 82%) 100%),
-      radial-gradient(circle at 75% 20%, rgba(90, 149, 245, 0.12), transparent 28%);
+    background: @surface-muted;
   }
 
   &.is-aside-collapsed {
@@ -239,7 +216,6 @@ export default defineComponent({
       width: 0;
       flex-basis: 0;
       border-right-color: transparent;
-      box-shadow: none;
 
       .layout-aside-inner {
         opacity: 0;

@@ -37,43 +37,42 @@ body {
 
 .ai-button {
   position: relative;
-  background: linear-gradient(135deg, @primary-hover 0%, @primary-color 100%);
+  background: @primary-color;
   padding: @spacing-sm @spacing-md;
   border-radius: @border-radius-md;
   border-style: solid;
-  border-color: transparent;
+  border-color: @primary-color;
   border-width: 1px;
   color: #fff;
   outline: none;
   cursor: pointer;
-  box-shadow: @shadow-sm;
   transition:
     transform @transition-fast,
-    box-shadow @transition-base,
     background @transition-base,
     border-color @transition-fast,
     color @transition-fast,
     opacity @transition-fast;
 
   &:hover:not([disabled]) {
-    box-shadow: @shadow-md;
+    background: @primary-hover;
+    border-color: @primary-hover;
   }
 
   &:active:not([disabled]) {
-    box-shadow: @shadow-sm;
+    background: @primary-active;
+    border-color: @primary-active;
   }
 
   &:focus-visible {
-    box-shadow: @focus-shadow, @shadow-sm;
+    outline: 2px solid rgba(63, 126, 232, 0.3);
+    outline-offset: 2px;
   }
 
   &[disabled] {
     color: @text-disabled;
     cursor: not-allowed;
-    background-image: none;
     background-color: #f2f4f7;
     border-color: #ebeef5 !important;
-    box-shadow: none;
     opacity: 0.78;
   }
 }
@@ -87,14 +86,11 @@ body {
   resize: none;
   font-size: inherit;
   color: @text-color;
-  background-color: fade(@surface-color, 90%);
-  background-image: none;
+  background-color: @surface-color;
   border: 1px solid @border-color;
   border-radius: @border-radius-lg;
-  box-shadow: inset 0 1px 2px rgba(31, 41, 55, 0.04);
   transition:
     border-color @transition-fast,
-    box-shadow @transition-base,
     background-color @transition-fast;
 
   &::placeholder {
@@ -104,10 +100,8 @@ body {
   &:focus {
     outline: none;
     border-color: @primary-color;
-    background-color: @surface-color;
-    box-shadow:
-      @focus-shadow,
-      inset 0 1px 2px rgba(31, 41, 55, 0.04);
+    outline: 2px solid rgba(63, 126, 232, 0.2);
+    outline-offset: -1px;
   }
 }
 
@@ -119,13 +113,13 @@ body {
   color: @text-color;
   transition:
     border-color @transition-fast,
-    box-shadow @transition-base,
     background-color @transition-fast;
 
   &:focus {
     outline: none;
     border-color: @primary-color;
-    box-shadow: @focus-shadow;
+    outline: 2px solid rgba(63, 126, 232, 0.2);
+    outline-offset: -1px;
   }
 
   &:disabled {

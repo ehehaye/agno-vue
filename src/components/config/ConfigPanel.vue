@@ -101,10 +101,9 @@ export default defineComponent({
 <style lang="less" scoped>
 .config-panel-section {
   margin: 0 @spacing-md @spacing-md;
-  border: 1px solid fade(@border-color, 72%);
+  border: 1px solid @border-color;
   border-radius: @border-radius-xl;
-  background: fade(@surface-color, 74%);
-  box-shadow: @shadow-sm;
+  background: @surface-color;
   overflow: hidden;
 
   .config-header {
@@ -112,9 +111,8 @@ export default defineComponent({
     font-size: 14px;
     font-weight: 600;
     color: @text-color;
-    background:
-      linear-gradient(135deg, fade(@primary-hover, 12%), fade(@surface-color, 86%));
-    border-bottom: 1px solid fade(@border-color, 64%);
+    background: @surface-muted;
+    border-bottom: 1px solid @border-color;
   }
 
   .config-content {
@@ -147,8 +145,7 @@ export default defineComponent({
       min-width: 0;
       padding: 9px 10px;
       font-size: 14px;
-      background-color: fade(@surface-color, 90%);
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.82);
+      background-color: @surface-color;
     }
   }
 }

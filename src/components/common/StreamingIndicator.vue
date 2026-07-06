@@ -28,8 +28,7 @@ export default defineComponent({
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: linear-gradient(135deg, @primary-hover, @primary-color);
-    box-shadow: 0 0 10px fade(@primary-color, 45%);
+    background: @primary-color;
     animation: bounce 1.2s infinite ease-in-out both;
 
     &:nth-child(1) {

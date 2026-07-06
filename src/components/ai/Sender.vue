@@ -112,29 +112,20 @@ export default defineComponent({
   align-items: center;
   gap: @spacing-md;
   padding: @spacing-md;
-  border: 1px solid fade(@border-color, 72%);
+  border: 1px solid @border-color;
   border-radius: @border-radius-xl;
-  background: fade(@surface-color, 88%);
-  box-shadow: @shadow-md;
-  backdrop-filter: blur(18px);
+  background: @surface-color;
   transition:
-    border-color @transition-fast,
-    box-shadow @transition-base;
+    border-color @transition-fast;
 
   &:focus-within {
-    border-color: fade(@primary-color, 58%);
-    box-shadow: @focus-shadow, @shadow-lg;
+    border-color: @primary-color;
   }
 
   textarea {
     flex: 1;
     border-color: transparent;
-    background:
-      linear-gradient(180deg, fade(@surface-muted, 72%), fade(@surface-color, 92%));
-
-    &:focus {
-      border-color: fade(@primary-color, 48%);
-    }
+    background: transparent;
   }
 
   .input-actions {

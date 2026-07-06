@@ -70,18 +70,16 @@ export default defineComponent({
   height: 100%;
 
   .init-loading,
-  .init-error {
-    margin: auto;
-    max-width: 520px;
-    padding: @spacing-xl;
-    text-align: center;
-    color: @text-color;
-    background: fade(@surface-color, 88%);
-    border: 1px solid fade(@border-color, 72%);
-    border-radius: @border-radius-xl;
-    box-shadow: @shadow-md;
-    backdrop-filter: blur(18px);
-  }
+    .init-error {
+      margin: auto;
+      max-width: 520px;
+      padding: @spacing-xl;
+      text-align: center;
+      color: @text-color;
+      background: @surface-color;
+      border: 1px solid @border-color;
+      border-radius: @border-radius-xl;
+    }
 
   .init-loading {
     position: relative;
@@ -117,9 +115,7 @@ export default defineComponent({
   height: 100%;
   display: flex;
   flex-direction: column;
-  background:
-    linear-gradient(180deg, fade(@surface-color, 72%) 0%, fade(@surface-muted, 80%) 100%);
-  border-right: 1px solid fade(@border-color, 66%);
+  background: @surface-color;
 }
 
 </style>
