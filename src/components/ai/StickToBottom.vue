@@ -73,5 +73,6 @@ export default defineComponent({
 .stick-to-bottom {
   height: 100%;
   overflow-y: auto;
+  position: relative;
 }
 </style>

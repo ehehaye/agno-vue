@@ -3,17 +3,19 @@
     class="chat-message"
     :class="[`message-${message.role}`]"
   >
-    <Avatar :type="message.role" />
+    <!-- <Avatar :type="message.role" /> -->
     <div class="message-content">
-      <div class="message-header">
+      <!-- <div class="message-header">
         <span class="message-name">{{ $t(`message.${message.role}`) }}</span>
-      </div>
+      </div> -->
       <UserMessage
         v-if="message.role === 'user'"
+        :id="message.id"
         :content="message.content"
       />
       <AssistantMessage
         v-else
+        :id="message.id"
         :message="message.streamMessage"
       />
     </div>
