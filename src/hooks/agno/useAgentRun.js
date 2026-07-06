@@ -463,12 +463,6 @@ export function useAgentRun() {
         memberRunsByParent.get(parentId).push(run)
       })
 
-      topLevelRuns.sort((a, b) => {
-        const aTime = a.messages?.[0]?.created_at || 0
-        const bTime = b.messages?.[0]?.created_at || 0
-        return aTime - bTime
-      })
-
       const loadedMessages = []
 
       topLevelRuns.forEach((run) => {
