@@ -6,7 +6,7 @@
         class="empty-state"
       >
         <div class="empty-icon">💬</div>
-        <p>{{ $t('chat.emptyState') }}</p>
+        <p class="empty-text">{{ $t('chat.emptyState') }}</p>
       </div>
       <StickToBottom
         v-else
@@ -16,6 +16,7 @@
           <!-- done messages -->
           <ChatMessage
             v-for="(message) in messages"
+            :id="message.id"
             :key="message.id"
             :message="message"
           />
@@ -27,13 +28,12 @@
         </div>
       </StickToBottom>
       <HistoryQuestionRail
-        class="message-rail"
-        :messages="messages"
+        :messages="userMessages"
       />
     </div>
 
     <Sender
-      :style="{ margin: '0 100px'}"
+      class="sender"
       :streaming="isStreaming"
       @cancel="cancelRun"
       @send="handleSend"
@@ -78,6 +78,10 @@ export default defineComponent({
       return null
     })
 
+    const userMessages = computed(() => {
+      return messages.value.filter((message) => message.role === $c.Role.User)
+    })
+
     const handleSend = async (text) => {
       await sendMessage(text)
     }
@@ -86,6 +90,7 @@ export default defineComponent({
       isStreaming,
       messages,
       currentSessionId,
+      userMessages,
       handleSend,
       cancelRun: () => { },
       streamingMessage,
@@ -95,12 +100,15 @@ export default defineComponent({
 </script>
 
 <style lang="less" scoped>
+@content-width: 70%;
+
 .chat-interface {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: @spacing-lg;
+  padding: @spacing-lg 0;
   gap: @spacing-md;
+  background: #fff;
 
   .chat-header {
     display: flex;
@@ -123,25 +131,11 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     gap: @spacing-md;
-    // padding: @spacing-md;
-    // border: 1px solid fade(@border-color, 72%);
-    // border-radius: @border-radius-xl @border-radius-sm @border-radius-sm @border-radius-xl;
-    // background:
-    //   linear-gradient(180deg, fade(@surface-color, 80%) 0%, fade(@surface-muted, 72%) 100%);
-    // box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), @shadow-sm;
-    scroll-behavior: smooth;
 
     .message-list {
-      padding: 0 100px;
-      margin-right: 40px;
+      width: @content-width;
+      margin: 0 auto;
       overflow-y: hidden;
-    }
-
-    .message-rail {
-      position: fixed;
-      top: 0;
-      right: 40px;
-      bottom: 0;
     }
 
     .empty-state {
@@ -160,7 +154,7 @@ export default defineComponent({
         animation: empty-icon-float 2.8s ease-in-out infinite;
       }
 
-      p {
+      .empty-text {
         margin: 0;
         font-size: 16px;
         padding: @spacing-sm @spacing-md;
@@ -169,6 +163,11 @@ export default defineComponent({
         border: 1px solid fade(@border-color, 58%);
       }
     }
+  }
+
+  .sender {
+    width: calc(@content-width - 20px);
+    margin: 0 auto;
   }
 }
 

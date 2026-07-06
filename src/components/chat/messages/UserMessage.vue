@@ -1,7 +1,7 @@
 <template>
   <div
     class="user-message"
-    v-text="content"
+    v-text="message.content"
   />
 </template>
 
@@ -11,9 +11,11 @@ import { defineComponent } from '@vue/composition-api'
 export default defineComponent({
   name: 'UserMessage',
   props: {
-    content: {
-      type: String,
-      default: '',
+    message: {
+      type: Object,
+      default: () => ({
+        content: '',
+      }),
     },
   }
 })

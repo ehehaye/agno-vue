@@ -1,17 +1,16 @@
 <template>
   <nav
-    v-if="questionMessages.length > 1"
+    v-if="messages.length > 1"
     class="history-question-rail"
     aria-label="History questions"
   >
     <button
-      v-for="(question, idx) in questionMessages"
+      v-for="(question, idx) in messages"
       v-show="idx <= 5"
       :key="question.id"
       type="button"
       class="question-entry"
       :title="question.title"
-      @click="scrollToMessage(question.id)"
     >
       <span class="question-line" />
       <span class="question-text">{{ question.content }}</span>
@@ -20,10 +19,7 @@
 </template>
 
 <script>
-import { computed, defineComponent } from '@vue/composition-api'
-import { $c } from '@/constants'
-
-const TITLE_THRESHOLD = 24
+import { defineComponent } from '@vue/composition-api'
 
 export default defineComponent({
   name: 'HistoryQuestionRail',
@@ -33,55 +29,15 @@ export default defineComponent({
       default: () => [],
     },
   },
-  setup(props) {
-    const normalizeContent = (content) => {
-      if (typeof content === 'string') {
-        return content.trim()
-      }
-
-      if (content == null) {
-        return ''
-      }
-
-      return String(content).trim()
-    }
-
-    const questionMessages = computed(() =>
-      props.messages
-        .filter(message => message.role === $c.Role.User)
-        .map((message, index) => {
-          const content = normalizeContent(message.content)
-
-          return {
-            id: message.id || `${message.timestamp || 'question'}-${index}`,
-            content,
-            title: content.length > TITLE_THRESHOLD ? content : null,
-          }
-        })
-        .filter(question => question.content)
-    )
-
-    const scrollToMessage = (id) => {
-      if (!id) {
-        return
-      }
-
-      document.getElementById(id)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      })
-    }
-
-    return {
-      questionMessages,
-      scrollToMessage,
-    }
-  },
 })
 </script>
 
 <style lang="less" scoped>
 .history-question-rail {
+  position: fixed;
+  top: 0;
+  right: 40px;
+  bottom: 0;
   width: 30px;
   flex-shrink: 0;
   display: flex;

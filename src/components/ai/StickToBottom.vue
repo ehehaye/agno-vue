@@ -72,7 +72,8 @@ export default defineComponent({
 <style lang="less" scoped>
 .stick-to-bottom {
   height: 100%;
-  overflow-y: auto;
   position: relative;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 </style>
