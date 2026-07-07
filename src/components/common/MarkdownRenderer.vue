@@ -32,7 +32,8 @@ const renderer = {
     return `<code class="md-code">${text}</code>`
   },
 
-  heading({ text, depth }) {
+  heading({ tokens, depth }) {
+    const text = this.parser.parseInline(tokens)
     return `<h${depth} class="md-h${depth}">${text}</h${depth}>`
   },
 
