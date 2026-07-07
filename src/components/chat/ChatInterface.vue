@@ -24,6 +24,10 @@
               :message="streamingMessage"
             />
           </div>
+          <Toc
+            :contents="tocContents"
+            container-selector=".stick-to-bottom"
+          />
         </StickToBottom>
       </template>
     </div>
@@ -46,6 +50,7 @@ import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig.js'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 import { $c } from '@/constants'
+import {Toc} from '@/components/common'
 
 export default defineComponent({
   name: 'ChatInterface',
@@ -53,6 +58,7 @@ export default defineComponent({
     Sender,
     ChatMessage,
     StickToBottom,
+    Toc,
   },
   setup() {
     usePerfTrack()
@@ -72,9 +78,11 @@ export default defineComponent({
       return null
     })
 
-    const userMessages = computed(() => {
-      return messages.value.filter((message) => message.role === $c.Role.User)
-    })
+    const userMessages = computed(() => messages.value.filter((message) => message.role === $c.Role.User))
+    const tocContents = computed(() => userMessages.value.map((message) => ({
+      ...message,
+      hash: `#message-${message.id}`,
+    })))
 
     const handleSend = async (text) => {
       await sendMessage(text)
@@ -85,6 +93,7 @@ export default defineComponent({
       messages,
       currentSessionId,
       userMessages,
+      tocContents,
       handleSend,
       cancelRun: () => { },
       streamingMessage,
