@@ -140,7 +140,7 @@ export default defineComponent({
       window.addEventListener('resize', this.refresh)
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.scrollRafId) {
       cancelAnimationFrame(this.scrollRafId)
     }
