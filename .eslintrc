@@ -20,6 +20,7 @@
     "sort-imports": ["error", { "ignoreDeclarationSort": true, "ignoreMemberSort": false }],
     "indent": ["error", 2],
     "vue/script-indent": ["error", 2],
+    "object-curly-spacing": ["error", "always"]
   },
   "overrides": [
     {
