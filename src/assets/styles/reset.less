@@ -2,9 +2,20 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: fade(@primary-color, 34%) transparent;
+  scrollbar-width: @scrollbar-width;
+  scrollbar-color: @scrollbar-color;
 }
+
+ul,
+ol {
+  list-style: none;
+}
+
+a,
+li {
+  text-decoration: none;
+}
+
 
 ::selection {
   color: #fff;
@@ -12,7 +23,7 @@
 }
 
 *::-webkit-scrollbar {
-  width: 8px;
+  width: @scrollbar-width;
   height: 8px;
 }
 
