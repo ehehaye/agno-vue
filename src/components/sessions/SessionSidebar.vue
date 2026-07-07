@@ -208,9 +208,7 @@ export default defineComponent({
         font-weight: 500;
         color: @text-color;
         margin-bottom: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        .ellipsis();
       }
 
       .session-time {
