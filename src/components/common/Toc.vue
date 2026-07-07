@@ -11,7 +11,6 @@
           :ref="`${item[itemKey]}`"
           class="toc__item"
           :class="{ 'toc__item--active': activeKey === item[itemKey] }"
-          :data-toc-item-id="item[itemKey]"
         >
           <a
             class="toc__item-link"
@@ -204,7 +203,6 @@ export default {
   }
 
   &__main {
-    max-height: 70vh;
     overflow: hidden auto;
     padding-right: @padding;
   }
