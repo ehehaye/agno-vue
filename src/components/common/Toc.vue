@@ -163,6 +163,17 @@ export default {
 @item-height: 16px;
 @padding: 16px;
 
+.item-active() {
+  .toc__item-text {
+    color: @primary-hover;
+  }
+
+  .toc__item-bar {
+    color: @primary-hover;
+    background-color: @primary-hover;
+  }
+}
+
 .toc {
   position: fixed;
   right: 20px;
@@ -213,7 +224,7 @@ export default {
     padding: 0;
     margin: 0;
     text-align: right;
-    height: @item-height * 10;
+    max-height: @item-height * 10;
   }
 
   &__item {
@@ -221,14 +232,7 @@ export default {
     margin: 8px 0;
 
     &--active {
-      .toc__item-link {
-        color: @primary-hover;
-        font-weight: 600;
-      }
-
-      .toc__item-bar {
-        background-color: @primary-hover;
-      }
+      .item-active();
     }
   }
 
@@ -241,14 +245,10 @@ export default {
     text-decoration: none;
     font-size: 14px;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 
     &:hover {
-      color: @primary-hover;
-
-      .toc__item-bar {
-        background-color: @primary-hover;
-      }
+      .item-active();
     }
   }
 
@@ -266,7 +266,7 @@ export default {
     width: 12px;
     height: 2px;
     background-color: #999;
-    transition: background-color 0.2s;
+    transition: background-color color 0.2s;
   }
 }
 </style>

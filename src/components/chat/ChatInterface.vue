@@ -25,6 +25,7 @@
             />
           </div>
           <Toc
+            v-show="tocContents.length > 1"
             :contents="tocContents"
             container-selector=".stick-to-bottom"
           />
