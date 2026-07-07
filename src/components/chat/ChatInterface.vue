@@ -25,11 +25,6 @@
             />
           </div>
         </StickToBottom>
-        <HistoryQuestionRail
-          :messages="userMessages"
-          message-selector=".user-message"
-          container-selector=".stick-to-bottom"
-        />
       </template>
     </div>
 
@@ -46,7 +41,6 @@
 import { computed, defineComponent } from '@vue/composition-api'
 import Sender from '@/components/ai/Sender.vue'
 import StickToBottom from '@/components/ai/StickToBottom.vue'
-import HistoryQuestionRail from '@/components/ai/HistoryQuestionRail.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig.js'
@@ -59,7 +53,6 @@ export default defineComponent({
     Sender,
     ChatMessage,
     StickToBottom,
-    HistoryQuestionRail,
   },
   setup() {
     usePerfTrack()

@@ -3,7 +3,7 @@ export const createScrollIntoView = () => {
 
   const scrollIntoView = (
     el,
-    options = { behavior: 'smooth', container: 'nearest' }
+    options = {}
   ) => {
     const rafId = rafIdMap.get(el)
 
@@ -14,7 +14,11 @@ export const createScrollIntoView = () => {
     const nextRafId = requestAnimationFrame(() => {
       if (el) {
         rafIdMap.delete(el)
-        el.scrollIntoView(options)
+        el.scrollIntoView({
+          behavior: 'smooth',
+          container: 'nearest',
+          ...options,
+        })
       }
     })
 
