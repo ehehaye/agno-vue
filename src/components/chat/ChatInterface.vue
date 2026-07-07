@@ -24,12 +24,12 @@
               :message="streamingMessage"
             />
           </div>
-          <Toc
-            v-show="tocContents.length > 1"
-            :contents="tocContents"
-            container-selector=".stick-to-bottom"
-          />
         </StickToBottom>
+        <Toc
+          v-show="tocContents.length > 1"
+          :contents="tocContents"
+          container-selector=".stick-to-bottom"
+        />
       </template>
     </div>
 
@@ -47,11 +47,11 @@ import { computed, defineComponent } from '@vue/composition-api'
 import Sender from '@/components/ai/Sender.vue'
 import StickToBottom from '@/components/ai/StickToBottom.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
+import { Toc } from '@/components/common'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig.js'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 import { $c } from '@/constants'
-import {Toc} from '@/components/common'
 
 export default defineComponent({
   name: 'ChatInterface',
