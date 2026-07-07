@@ -5,7 +5,7 @@
   >
     <div class="message-content">
       <UserMessage
-        v-if="message.role === 'user'"
+        v-if="message.role === $c.Role.User"
         :message="message"
       />
       <AssistantMessage
