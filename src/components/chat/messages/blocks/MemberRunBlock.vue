@@ -75,12 +75,6 @@ export default defineComponent({
       isExpanded: false,
     }
   },
-  computed: {
-    durationText() {
-      const duration = this.memberRun.metrics?.duration
-      return duration ? ` in ${duration.toFixed(1)}s` : ''
-    },
-  },
 })
 </script>
 
