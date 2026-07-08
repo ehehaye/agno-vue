@@ -48,8 +48,7 @@
 
 <script>
 import { defineComponent } from '@vue/composition-api'
-import { Collapse } from '@/components/ui'
-import { MarkdownRenderer } from '@/components/common'
+import { Collapse, MarkdownRenderer } from '@/components/common'
 import { DurationBlock, ReasoningBlock } from '@/components/chat/messages/blocks'
 import { CheckCircleIcon, RobotIcon, SpinnerIcon } from '@/components/icons'
 

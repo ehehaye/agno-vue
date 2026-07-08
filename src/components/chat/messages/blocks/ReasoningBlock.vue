@@ -16,7 +16,7 @@
 
 <script>
 import { defineComponent } from '@vue/composition-api'
-import { Collapse } from '@/components/ui'
+import { Collapse } from '@/components/common'
 
 export default defineComponent({
   name: 'ReasoningBlock',
