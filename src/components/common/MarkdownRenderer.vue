@@ -129,7 +129,7 @@ export default defineComponent({
       immediate: true,
     },
   },
-  beforeUnmount() {
+  beforeDestroy() {
     if (this.htmlRafId) {
       cancelAnimationFrame(this.htmlRafId)
     }

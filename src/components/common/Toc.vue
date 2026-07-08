@@ -77,7 +77,7 @@ export default {
       this.updateActiveId
     )
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.setContainer(null)
   },
   methods: {
@@ -194,7 +194,7 @@ export default {
 
     .toc__item-text {
       opacity: 1;
-      width: 80px;
+      width: 160px;
     }
 
     .toc__override-scroll {
