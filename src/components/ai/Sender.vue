@@ -12,13 +12,19 @@
     />
     <div class="input-actions">
       <button
-        class="ai-button send-button"
-        :class="{ streaming }"
-        :disabled="disabled"
-        @click="streaming ? $emit('cancel') : send()"
+        v-if="isStreaming"
+        class="ai-button send-button streaming"
+        @click="send()"
       >
-        <StopIcon v-if="streaming" />
-        <SendIcon v-else />
+        <StopIcon />
+      </button>
+      <button
+        v-else
+        class="ai-button send-button"
+        :disabled="disabled"
+        @click="send()"
+      >
+        <SendIcon />
       </button>
     </div>
   </div>
