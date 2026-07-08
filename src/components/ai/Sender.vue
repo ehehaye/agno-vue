@@ -14,7 +14,7 @@
       <button
         v-if="isStreaming"
         class="ai-button send-button streaming"
-        @click="send()"
+        @click="$emit('cancel')"
       >
         <StopIcon />
       </button>
