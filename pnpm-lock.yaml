@@ -35,6 +35,9 @@ importers:
       vue-i18n:
         specifier: ^8.28.2
         version: 8.28.2(vue@2.6.14)
+      vue-virtual-scroller:
+        specifier: ^1.1.2
+        version: 1.1.2(vue@2.6.14)
     devDependencies:
       code-inspector-plugin:
         specifier: ^1.6.4
@@ -1658,6 +1661,9 @@ packages:
     resolution: {integrity: sha512-6R3J5M4AcbtLUdZmRv2SygeVaM7IhrLXu9BmnOGmmACak8fiUtOsYNWUS4uK7upbmHIBbLBeFeI//477BKLBzA==}
     engines: {node: '>=11.0.0'}
 
+  scrollparent@2.1.0:
+    resolution: {integrity: sha512-bnnvJL28/Rtz/kz2+4wpBjHzWoEzXhVg/TE8BeVGJHUqE8THNIRnDxDWMktwM+qahvlRdvlLdsQfYe+cuqfZeA==}
+
   semver@5.7.2:
     resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
     hasBin: true
@@ -1809,6 +1815,14 @@ packages:
     peerDependencies:
       vue: ^2
 
+  vue-observe-visibility@0.4.6:
+    resolution: {integrity: sha512-xo0CEVdkjSjhJoDdLSvoZoQrw/H2BlzB5jrCBKGZNXN2zdZgMuZ9BKrxXDjNP2AxlcCoKc8OahI3F3r3JGLv2Q==}
+
+  vue-resize@0.4.5:
+    resolution: {integrity: sha512-bhP7MlgJQ8TIkZJXAfDf78uJO+mEI3CaLABLjv0WNzr4CcGRGPIAItyWYnP6LsPA4Oq0WE+suidNs6dgpO4RHg==}
+    peerDependencies:
+      vue: ^2.3.0
+
   vue-template-babel-compiler@1.2.0:
     resolution: {integrity: sha512-CScBSX1/wCdmmZ/Lvj/63p2CCVTS0FMj0F69VRBo73CuJrjvPAPGmeNJ7D/cwt/VS2PduowRWbO8N4Zh4Z3b0g==}
     engines: {node: '>=12.0.0'}
@@ -1820,6 +1834,11 @@ packages:
 
   vue-template-es2015-compiler@1.9.1:
     resolution: {integrity: sha512-4gDntzrifFnCEvyoO8PqyJDmguXgVPxKiIxrBKjIowvL9l+N66196+72XVYR8BBf1Uv1Fgt3bGevJ+sEmxfZzw==}
+
+  vue-virtual-scroller@1.1.2:
+    resolution: {integrity: sha512-SkUyc7QHCJFB5h1Fya7LxVizlVzOZZuFVipBGHYoTK8dwLs08bIz/tclvRApYhksaJIm/nn51inzO2UjpGJPMQ==}
+    peerDependencies:
+      vue: ^2.6.11
 
   vue@2.6.14:
     resolution: {integrity: sha512-x2284lgYvjOMj3Za7kqzRcUSxBboHqtgRE2zlos1qWaOye5yUmHn42LB1250NJBLRwEcdrB0JRwyPTEPhfQjiQ==}
@@ -3202,6 +3221,8 @@ snapshots:
   sax@1.6.0:
     optional: true
 
+  scrollparent@2.1.0: {}
+
   semver@5.7.2:
     optional: true
 
@@ -3386,6 +3407,12 @@ snapshots:
     dependencies:
       vue: 2.6.14
 
+  vue-observe-visibility@0.4.6: {}
+
+  vue-resize@0.4.5(vue@2.6.14):
+    dependencies:
+      vue: 2.6.14
+
   vue-template-babel-compiler@1.2.0(vue-template-compiler@2.6.14):
     dependencies:
       '@babel/core': 7.29.0
@@ -3410,6 +3437,13 @@ snapshots:
       he: 1.2.0
 
   vue-template-es2015-compiler@1.9.1: {}
+
+  vue-virtual-scroller@1.1.2(vue@2.6.14):
+    dependencies:
+      scrollparent: 2.1.0
+      vue: 2.6.14
+      vue-observe-visibility: 0.4.6
+      vue-resize: 0.4.5(vue@2.6.14)
 
   vue@2.6.14: {}
 

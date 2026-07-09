@@ -9,11 +9,12 @@
         +
       </button>
     </div>
-    <VirtualScrollList
-      class="sessions-list"
+    <RecycleScroller
+      v-if="sessions.length"
       :items="sessions"
-      :item-height="sessionItemHeight"
-      item-key="session_id"
+      :item-size="sessionItemHeight"
+      key-field="session_id"
+      class="sessions-list"
     >
       <template #default="{ item: session }">
         <div
@@ -41,18 +42,18 @@
           </button>
         </div>
       </template>
-      <template #empty>
-        <div class="empty-state">
-          <p>{{ $t('sidebar.noSessions') }}</p>
-        </div>
-      </template>
-    </VirtualScrollList>
+    </RecycleScroller>
+    <div
+      v-else
+      class="empty-state"
+    >
+      <p>{{ $t('sidebar.noSessions') }}</p>
+    </div>
   </div>
 </template>
 
 <script>
 import { defineComponent } from '@vue/composition-api'
-import { VirtualScrollList } from '@/components/common'
 import { useSessionManager } from '@/hooks/agno/useSessionManager.js'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig'
@@ -60,9 +61,6 @@ import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 
 export default defineComponent({
   name: 'SessionSidebar',
-  components: {
-    VirtualScrollList,
-  },
   setup(_, { root }) {
     usePerfTrack()
     const { currentSessionId, setCurrentSessionId } = useConfig()
