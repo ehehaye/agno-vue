@@ -12,7 +12,7 @@
     />
     <div class="input-actions">
       <button
-        v-if="isStreaming"
+        v-if="streaming"
         class="ai-button send-button streaming"
         @click="$emit('cancel')"
       >
