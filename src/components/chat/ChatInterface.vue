@@ -2,28 +2,35 @@
   <div class="chat-interface">
     <div class="chat-messages">
       <div
-        v-if="messages.length === 0"
+        v-if="displayMessages.length === 0"
         class="empty-state"
       >
         <div class="empty-icon">💬</div>
         <p class="empty-text">{{ $t('chat.emptyState') }}</p>
       </div>
       <template v-else>
-        <StickToBottom :messages="messages">
-          <div class="message-list">
-            <!-- done messages -->
-            <ChatMessage
-              v-for="(message) in messages"
-              :id="`message-${message.id}`"
-              :key="message.id"
-              :message="message"
-            />
-            <!-- streaming message -->
-            <ChatMessage
-              v-if="streamingMessage"
-              :message="streamingMessage"
-            />
-          </div>
+        <StickToBottom :messages="displayMessages">
+          <DynamicScroller
+            :items="displayMessages"
+            :min-item-size="60"
+          >
+            <template #default="{ item: message, index, active }">
+              <DynamicScrollerItem
+                class="message-item"
+                :item="message"
+                :active="active"
+                :size-dependencies="[
+                  calMsgFingerprint(message),
+                ]"
+                :data-index="index"
+              >
+                <ChatMessage
+                  :id="`message-${message.id}`"
+                  :message="message"
+                />
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
         </StickToBottom>
         <Toc
           v-show="tocContents.length > 1"
@@ -52,6 +59,7 @@ import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig.js'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 import { $c } from '@/constants'
+import { calMsgFingerprint } from '@/utils'
 
 export default defineComponent({
   name: 'ChatInterface',
@@ -79,6 +87,13 @@ export default defineComponent({
       return null
     })
 
+    const displayMessages = computed(() => {
+      if (streamingMessage.value) {
+        return [...messages.value, streamingMessage.value]
+      }
+      return messages.value
+    })
+
     const userMessages = computed(() => messages.value.filter((message) => message.role === $c.Role.User))
     const tocContents = computed(() => userMessages.value.map((message) => ({
       ...message,
@@ -91,13 +106,12 @@ export default defineComponent({
 
     return {
       isStreaming,
-      messages,
+      displayMessages,
       currentSessionId,
-      userMessages,
       tocContents,
       handleSend,
       cancelRun: () => { },
-      streamingMessage,
+      calMsgFingerprint,
     }
   },
 })
@@ -136,10 +150,9 @@ export default defineComponent({
     flex-direction: column;
     gap: @spacing-md;
 
-    .message-list {
+    .message-item {
       width: @content-width;
       margin: 0 auto;
-      overflow-y: hidden;
     }
 
     .empty-state {
