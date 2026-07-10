@@ -145,7 +145,7 @@ export default defineComponent({
   .chat-messages {
     position: relative;
     flex: 1;
-    overflow-y: hidden;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: @spacing-md;

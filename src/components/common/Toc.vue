@@ -18,7 +18,7 @@
             :href="item[hashKey]"
             @click="onNavClick($event, item)"
           >
-            <span class="toc__item-text">{{ item[labelKey] }}</span>
+            <span class="toc__item-text">{{ truncateByWidth(item[labelKey], 160) }}</span>
             <span class="toc__item-bar" />
           </a>
         </li>
@@ -29,6 +29,10 @@
 </template>
 
 <script>
+import { debounce, truncateByWidth } from '@/utils/index'
+
+const debounceDelay = 100
+
 export default {
   name: 'Toc',
   props: {
@@ -64,6 +68,9 @@ export default {
       pendingUpdate: false,
     }
   },
+  created() {
+    this.updateActiveKey = debounce(this.updateActiveKey, debounceDelay)
+  },
   mounted() {
     const container = document.querySelector(this.containerSelector)
     if (!container) {
@@ -71,16 +78,17 @@ export default {
       return
     }
     this.setContainer(container)
-    this.updateActiveId()
+    this.updateActiveKey()
     this.$watch(
       () => this.contents,
-      this.updateActiveId
+      this.updateActiveKey
     )
   },
   beforeDestroy() {
     this.setContainer(null)
   },
   methods: {
+    truncateByWidth,
     setContainer(el) {
       if (this.$container) {
         this.$container.removeEventListener('scroll', this.onContainerScroll)
@@ -89,53 +97,32 @@ export default {
         (this.$container = el).addEventListener('scroll', this.onContainerScroll)
       }
     },
-    getOffsetTopRelativeTo(element, container) {
-      let offsetTop = 0
-      let current = element
-      while (current && current !== container) {
-        offsetTop += current.offsetTop
-        current = current.offsetParent
-      }
-      return offsetTop
-    },
-    async updateActiveId() {
-      if (!this.$container) return
-
+    async updateActiveKey() {
       await this.$nextTick()
 
-      const scrollTop = this.$container.scrollTop
-      const containerHeight = this.$container.clientHeight
-      const threshold = scrollTop + containerHeight * 0.3
+      const { scrollTop, scrollHeight, clientHeight } = this.$container
+      const { length } = this.contents
 
-      let currentIndex = -1
-      for (let i = this.contents.length - 1; i >= 0; i--) {
-        const item = this.contents[i]
-        const [el] = this.$refs[item[this.itemKey]]
-        const offsetTop = this.getOffsetTopRelativeTo(el, this.$container)
-        if (offsetTop <= threshold) {
-          currentIndex = i
-          break
-        }
-      }
+      // Calculate scroll progress percentage (0-100)
+      const scrollProgress = scrollTop / (scrollHeight - clientHeight)
+      const scrollRatio = ~~(scrollProgress * 100).toFixed(0)
+      // Map scroll ratio to content index and clamp to valid range
+      const ratioToIndex = Math.ceil(length * scrollRatio / 100)
+      const index = Math.min(ratioToIndex, length - 1)
+      // Update active key based on calculated index
+      this.activeKey = this.contents[index][this.itemKey]
 
-      if (currentIndex !== -1) {
-        const newActiveId = this.contents[currentIndex][this.itemKey]
-        this.activeKey = newActiveId
-
-        await this.$nextTick()
-        const activeItem = this.$refs[newActiveId] ? this.$refs[newActiveId][0] : null
-        if (activeItem && this.$refs.listContainer.scrollHeight > this.$refs.listContainer.clientHeight) {
-          // FIXME: undefined
-          activeItem.scrollIntoView({
-            block: 'nearest',
-            behavior: 'smooth',
-          })
-        }
-      }
+      // Scroll the active TOC item into visible area
+      const [activeItem] = this.$refs[this.activeKey]
+      activeItem.scrollIntoView({
+        block: 'center',
+        container: 'nearest',
+        behavior: 'smooth',
+      })
     },
     onContainerScroll() {
       if (!this.pendingUpdate) {
-        this.updateActiveId()
+        this.updateActiveKey()
       }
     },
     onNavClick(e, item) {
@@ -147,7 +134,7 @@ export default {
         this.pendingUpdate = true
         setTimeout(() => {
           this.pendingUpdate = false
-        }, 100)
+        }, debounceDelay + 20)
         element.scrollIntoView({
           block: 'start',
           behavior: 'instant',

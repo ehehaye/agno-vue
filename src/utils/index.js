@@ -13,8 +13,33 @@ export function calMsgFingerprint(message) {
   if (message.id !== 'streaming') {
     return length
   }
-  length += (message.content?.length || 0) + (message.reasoning_content?.length || 0)
+  length +=
+    (message.content?.length || 0) + (message.reasoning_content?.length || 0)
   length += message.tool_calls?.length || 0
   length += message.member_runs?.length || 0
   return length
+}
+
+export function debounce(fn, delay) {
+  let timer
+  return function (...args) {
+    if (timer) {
+      clearTimeout(timer)
+    }
+    timer = setTimeout(() => {
+      fn(...args)
+    }, delay)
+  }
+}
+
+export function truncateByWidth(text, maxWidth, fontStyle = '14px Arial') {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  ctx.font = fontStyle
+
+  let result = text
+  while (ctx.measureText(result).width > maxWidth && result.length > 0) {
+    result = result.slice(0, -1)
+  }
+  return result
 }
