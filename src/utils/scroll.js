@@ -132,3 +132,24 @@ export const getDistanceToBottom = (el) => {
   const { scrollTop, scrollHeight, clientHeight } = el
   return Math.max(scrollHeight - scrollTop - clientHeight, 0)
 }
+
+export function checkScrollCompletion(el) {
+  return new Promise((resolve) => {
+    let lastPos = undefined
+    let same = 0
+
+    function innerCheck() {
+      const { top: newPos } = el.getBoundingClientRect()
+      // https://stackoverflow.com/questions/46795955/how-to-know-scroll-to-element-is-done-in-javascript
+      if (lastPos === newPos && same++ > 0) {
+        resolve()
+      } else {
+        lastPos = newPos
+        requestAnimationFrame(innerCheck)
+      }
+    }
+
+    requestAnimationFrame(innerCheck)
+  })
+}
+

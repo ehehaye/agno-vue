@@ -16,7 +16,7 @@
             class="toc__item-link"
             :title="item[labelKey]"
             :href="item[hashKey]"
-            @click="onNavClick($event, item)"
+            @click.prevent="onNavClick(item)"
           >
             <span class="toc__item-text">{{ truncateByWidth(item[labelKey], 160) }}</span>
             <span class="toc__item-bar" />
@@ -30,8 +30,7 @@
 
 <script>
 import { debounce, truncateByWidth } from '@/utils/index'
-
-const debounceDelay = 100
+import { checkScrollCompletion } from '@/utils/scroll'
 
 export default {
   name: 'Toc',
@@ -56,10 +55,6 @@ export default {
       type: String,
       default: 'content',
     },
-    updateHashOnUrl: {
-      type: Boolean,
-      default: false,
-    },
   },
   data() {
     return {
@@ -69,7 +64,7 @@ export default {
     }
   },
   created() {
-    this.updateActiveKey = debounce(this.updateActiveKey, debounceDelay)
+    this.updateActiveKey = debounce(this.updateActiveKey, 100)
   },
   mounted() {
     const container = document.querySelector(this.containerSelector)
@@ -125,20 +120,14 @@ export default {
         this.updateActiveKey()
       }
     },
-    onNavClick(e, item) {
-      if (this.updateHashOnUrl) return
-      e.preventDefault()
+    async onNavClick(item) {
       this.activeKey = item[this.itemKey]
       const element = document.querySelector(item[this.hashKey])
       if (element) {
         this.pendingUpdate = true
-        setTimeout(() => {
-          this.pendingUpdate = false
-        }, debounceDelay + 20)
-        element.scrollIntoView({
-          block: 'start',
-          behavior: 'instant',
-        })
+        element.scrollIntoView()
+        await checkScrollCompletion(element)
+        this.pendingUpdate = false
       }
     },
   },
