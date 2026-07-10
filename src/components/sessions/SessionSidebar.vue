@@ -10,8 +10,8 @@
       </button>
     </div>
     <RecycleScroller
-      v-if="sessions.length"
-      :items="sessions"
+      v-if="displayedSessions.length"
+      :items="displayedSessions"
       :item-size="sessionItemHeight"
       key-field="session_id"
       class="sessions-list"
@@ -28,9 +28,9 @@
           <div class="session-content">
             <div
               class="session-title"
-              :title="formatSessionName(session.session_name)"
+              :title="session.session_name"
             >
-              {{ formatSessionName(session.session_name) }}
+              {{ truncateByWidth(session.session_name, 200) }}
             </div>
             <div class="session-time">{{ formatTime(session.created_at) }}</div>
           </div>
@@ -53,11 +53,12 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api'
+import { computed, defineComponent } from '@vue/composition-api'
 import { useSessionManager } from '@/hooks/agno/useSessionManager.js'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
+import { truncateByWidth } from '@/utils'
 
 export default defineComponent({
   name: 'SessionSidebar',
@@ -85,6 +86,11 @@ export default defineComponent({
       return name
     }
 
+    const displayedSessions = computed(() => sessions.value.map(session => ({
+      ...session,
+      session_name: formatSessionName(session.session_name),
+    })))
+
     const handleLoadSession = (id) => {
       setCurrentSessionId(id)
       loadSession(id)
@@ -101,7 +107,7 @@ export default defineComponent({
     }
 
     return {
-      sessions,
+      displayedSessions,
       currentSessionId,
       sessionItemHeight,
       setCurrentSessionId,
@@ -109,6 +115,7 @@ export default defineComponent({
       formatTime,
       formatSessionName,
       handleDelete,
+      truncateByWidth,
     }
   },
 })
