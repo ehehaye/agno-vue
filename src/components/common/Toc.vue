@@ -43,6 +43,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    minContentHeight: {
+      type: Number,
+      default: 10,
+    },
     hashKey: {
       type: String,
       default: 'hash',
@@ -64,6 +68,7 @@ export default {
     }
   },
   created() {
+    this.activeKey = this.contents[0]?.[this.itemKey] || ''
     this.updateActiveKey = debounce(this.updateActiveKey, 100)
   },
   mounted() {
@@ -73,7 +78,6 @@ export default {
       return
     }
     this.setContainer(container)
-    this.updateActiveKey()
     this.$watch(
       () => this.contents,
       this.updateActiveKey
@@ -92,22 +96,92 @@ export default {
         (this.$container = el).addEventListener('scroll', this.onContainerScroll)
       }
     },
+    buildHeightMeta(list) {
+      let total = 0
+      const cache = list.map(item => {
+        const start = total
+        total += item.getHeight()
+        return { start, end: total }
+      })
+      return {
+        cache,
+        totalHeight: total
+      }
+    },
+    findItemByScrollOffset(
+      list,
+      cache,
+      totalHeight,
+      scrollTop,
+      clientHeight,
+    ) {
+      const maxScrollTop = Math.max(totalHeight - clientHeight, 0)
+
+      // ✅ 1. 视线焦点在内容中的位置 + 视线偏移量（一般用户不会关注在顶部）
+      const focusOffset = scrollTop + this.minContentHeight
+
+      // ✅ 2. 防越界（弹性滚动 / 程序设置）
+      const clampedOffset = Math.min(
+        Math.max(0, focusOffset),
+        totalHeight
+      )
+
+      // ✅ 3. 比例基于「已 clamp 的焦点」
+      const ratio =
+        maxScrollTop === 0
+          ? 0
+          : clampedOffset / totalHeight
+
+      // ✅ 4. 映射到内容高度
+      const targetOffset = ratio * totalHeight
+
+      // ✅ 5. 二分查找
+      let low = 0
+      let high = list.length - 1
+
+      while (low <= high) {
+        const mid = (low + high) >> 1
+        const { start, end } = cache[mid]
+
+        if (targetOffset < start) {
+          high = mid - 1
+        } else if (targetOffset >= end) {
+          low = mid + 1
+        } else {
+          return {
+            index: mid,
+            item: list[mid],
+            offsetInItem: targetOffset - start,
+            focusOffset: clampedOffset,
+            ratio
+          }
+        }
+      }
+
+      // ✅ 6. 兜底（滚动到底部 / 越界）
+      const lastIndex = list.length - 1
+      return {
+        index: lastIndex,
+        item: list[lastIndex],
+        offsetInItem: list[lastIndex].height,
+        focusOffset: clampedOffset,
+        ratio: 1
+      }
+    },
     async updateActiveKey() {
       await this.$nextTick()
 
-      const { scrollTop, scrollHeight, clientHeight } = this.$container
-      const { length } = this.contents
+      const { scrollTop, clientHeight } = this.$container
 
-      // Calculate scroll progress percentage (0-100)
-      const scrollProgress = scrollTop / (scrollHeight - clientHeight)
-      const scrollRatio = ~~(scrollProgress * 100).toFixed(0)
-      // Map scroll ratio to content index and clamp to valid range
-      const ratioToIndex = Math.ceil(length * scrollRatio / 100)
-      const index = Math.min(ratioToIndex, length - 1)
-      // Update active key based on calculated index
+      const { cache, totalHeight } = this.buildHeightMeta(this.contents)
+      const { index } = this.findItemByScrollOffset(
+        this.contents,
+        cache,
+        totalHeight,
+        scrollTop,
+        clientHeight
+      )
       this.activeKey = this.contents[index][this.itemKey]
-
-      // Scroll the active TOC item into visible area
       const [activeItem] = this.$refs[this.activeKey]
       activeItem.scrollIntoView({
         block: 'center',

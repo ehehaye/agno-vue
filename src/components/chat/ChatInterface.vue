@@ -11,8 +11,10 @@
       <template v-else>
         <StickToBottom :messages="displayMessages">
           <DynamicScroller
+            ref="scroller"
             :items="displayMessages"
             :min-item-size="60"
+            :buffer="2000"
           >
             <template #default="{ item: message, index, active }">
               <DynamicScrollerItem
@@ -36,6 +38,7 @@
           v-show="tocContents.length > 1"
           :contents="tocContents"
           container-selector=".stick-to-bottom"
+          :min-content-height="60 * 2"
         />
       </template>
     </div>
@@ -50,7 +53,7 @@
 </template>
 
 <script>
-import { computed, defineComponent } from '@vue/composition-api'
+import { computed, defineComponent, ref } from '@vue/composition-api'
 import Sender from '@/components/ai/Sender.vue'
 import StickToBottom from '@/components/ai/StickToBottom.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
@@ -71,6 +74,7 @@ export default defineComponent({
   },
   setup() {
     usePerfTrack()
+    const scroller = ref(null)
     const { currentSessionId } = useConfig()
     const { messages, currentRun, isStreaming, sendMessage } = useAgentRun()
 
@@ -94,17 +98,30 @@ export default defineComponent({
       return messages.value
     })
 
-    const userMessages = computed(() => messages.value.filter((message) => message.role === $c.Role.User))
-    const tocContents = computed(() => userMessages.value.map((message) => ({
-      ...message,
-      hash: `#message-${message.id}`,
-    })))
+    const getHeightOfMessage = (message) => {
+      return scroller.value?.vscrollData.sizes[message.id] || 0
+    }
+
+    const tocContents = computed(() => displayMessages.value
+      .map((message, idx) => {
+        return {
+          ...message,
+          hash: `#message-${message.id}`,
+          getHeight() {
+            const nextAiMessage = displayMessages.value[idx + 1]
+            return getHeightOfMessage(message) + (nextAiMessage ? getHeightOfMessage(nextAiMessage) : 0)
+          }
+        }
+      })
+      .filter((message) => message.role === $c.Role.User)
+    )
 
     const handleSend = async (text) => {
       await sendMessage(text)
     }
 
     return {
+      scroller,
       isStreaming,
       displayMessages,
       currentSessionId,
