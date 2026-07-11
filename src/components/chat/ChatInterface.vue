@@ -13,8 +13,7 @@
           <DynamicScroller
             ref="scroller"
             :items="displayMessages"
-            :min-item-size="60"
-            :buffer="2000"
+            :min-item-size="minContentHeight"
           >
             <template #default="{ item: message, index, active }">
               <DynamicScrollerItem
@@ -22,7 +21,7 @@
                 :item="message"
                 :active="active"
                 :size-dependencies="[
-                  calMsgFingerprint(message),
+                  message.fingerprint,
                 ]"
                 :data-index="index"
               >
@@ -38,7 +37,7 @@
           v-show="tocContents.length > 1"
           :contents="tocContents"
           container-selector=".stick-to-bottom"
-          :min-content-height="60 * 2"
+          :min-content-height="minContentHeight * 2"
         />
       </template>
     </div>
@@ -92,10 +91,14 @@ export default defineComponent({
     })
 
     const displayMessages = computed(() => {
+      const displayMessages = messages.value.slice()
       if (streamingMessage.value) {
-        return [...messages.value, streamingMessage.value]
+        displayMessages.push(streamingMessage.value)
       }
-      return messages.value
+      return displayMessages.map((message) => ({
+        ...message,
+        fingerprint: calMsgFingerprint(message),
+      }))
     })
 
     const getHeightOfMessage = (message) => {
@@ -121,6 +124,7 @@ export default defineComponent({
     }
 
     return {
+      minContentHeight: 60,
       scroller,
       isStreaming,
       displayMessages,
