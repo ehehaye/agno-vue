@@ -6,7 +6,7 @@
         class="toc__list"
       >
         <li
-          v-for="item in contents"
+          v-for="(item, idx) in contents"
           :key="item[itemKey]"
           :ref="`${item[itemKey]}`"
           class="toc__item"
@@ -16,7 +16,7 @@
             class="toc__item-link"
             :title="item[labelKey]"
             :href="item[hashKey]"
-            @click.prevent="onNavClick(item)"
+            @click.prevent="onNavClick(item, idx)"
           >
             <span class="toc__item-text">{{ truncateByWidth(item[labelKey], 160) }}</span>
             <span class="toc__item-bar" />
@@ -194,15 +194,25 @@ export default {
         this.updateActiveKey()
       }
     },
-    async onNavClick(item) {
+    async onNavClick(item, idx) {
+      this.pendingUpdate = true
       this.activeKey = item[this.itemKey]
+      const { cache } = this.buildHeightMeta(this.contents)
+      const { start } = cache[idx]
+      // Elements may not be rendered under virtual scrolling.
       const element = document.querySelector(item[this.hashKey])
       if (element) {
         this.pendingUpdate = true
         element.scrollIntoView()
         await checkScrollCompletion(element)
-        this.pendingUpdate = false
+      } else {
+        this.$container.scrollTo({
+          top: start,
+          behavior: 'smooth',
+        })
+        await checkScrollCompletion(this.$container)
       }
+      this.pendingUpdate = false
     },
   },
 }
