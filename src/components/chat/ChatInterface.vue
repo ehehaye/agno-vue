@@ -10,28 +10,13 @@
       </div>
       <template v-else>
         <StickToBottom :messages="displayMessages">
-          <DynamicScroller
-            ref="scroller"
-            :items="displayMessages"
-            :min-item-size="minContentHeight"
-          >
-            <template #default="{ item: message, index, active }">
-              <DynamicScrollerItem
-                class="message-item"
-                :item="message"
-                :active="active"
-                :size-dependencies="[
-                  message.fingerprint,
-                ]"
-                :data-index="index"
-              >
-                <ChatMessage
-                  :id="`message-${message.id}`"
-                  :message="message"
-                />
-              </DynamicScrollerItem>
-            </template>
-          </DynamicScroller>
+          <ChatMessage
+            v-for="message in displayMessages"
+            :id="`message-${message.id}`"
+            :key="message.id"
+            class="message-item"
+            :message="message"
+          />
         </StickToBottom>
         <Toc
           v-show="tocContents.length > 1"
@@ -52,7 +37,7 @@
 </template>
 
 <script>
-import { computed, defineComponent, ref } from '@vue/composition-api'
+import { computed, defineComponent } from '@vue/composition-api'
 import Sender from '@/components/ai/Sender.vue'
 import StickToBottom from '@/components/ai/StickToBottom.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
@@ -61,7 +46,6 @@ import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig.js'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 import { $c } from '@/constants'
-import { calMsgFingerprint } from '@/utils'
 
 export default defineComponent({
   name: 'ChatInterface',
@@ -73,7 +57,6 @@ export default defineComponent({
   },
   setup() {
     usePerfTrack()
-    const scroller = ref(null)
     const { currentSessionId } = useConfig()
     const { messages, currentRun, isStreaming, sendMessage } = useAgentRun()
 
@@ -91,32 +74,25 @@ export default defineComponent({
     })
 
     const displayMessages = computed(() => {
-      const displayMessages = messages.value.slice()
       if (streamingMessage.value) {
-        displayMessages.push(streamingMessage.value)
+        return [...messages.value, streamingMessage.value]
       }
-      return displayMessages.map((message) => ({
-        ...message,
-        fingerprint: calMsgFingerprint(message),
-      }))
+      return [...messages.value]
     })
-
-    const getHeightOfMessage = (message) => {
-      return scroller.value?.vscrollData.sizes[message.id] || 0
-    }
 
     const tocContents = computed(() => displayMessages.value
       .map((message, idx) => {
+        const getHeight = ({ id }) => document.getElementById(`message-${id}`)?.offsetHeight || 0
         return {
           ...message,
           hash: `#message-${message.id}`,
           getHeight() {
-            const nextAiMessage = displayMessages.value[idx + 1]
-            return getHeightOfMessage(message) + (nextAiMessage ? getHeightOfMessage(nextAiMessage) : 0)
+            const response = displayMessages.value[idx + 1]
+            return getHeight(message) + (response ? getHeight(response) : 0)
           }
         }
       })
-      .filter((message) => message.role === $c.Role.User)
+      .filter(({ role }) => role === $c.Role.User)
     )
 
     const handleSend = async (text) => {
@@ -125,14 +101,12 @@ export default defineComponent({
 
     return {
       minContentHeight: 60,
-      scroller,
       isStreaming,
       displayMessages,
       currentSessionId,
       tocContents,
       handleSend,
       cancelRun: () => { },
-      calMsgFingerprint,
     }
   },
 })

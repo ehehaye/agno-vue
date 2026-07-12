@@ -54,7 +54,7 @@ export default defineComponent({
           cancelNextScroll()
         } else {
           await nextTick()
-          scrollIntoView(messagesEndRef.value)
+          scrollIntoView(messagesEndRef.value, { behavior: 'instant' })
         }
         return
       },

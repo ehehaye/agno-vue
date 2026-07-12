@@ -43,10 +43,6 @@ export default {
       type: Array,
       default: () => [],
     },
-    minContentHeight: {
-      type: Number,
-      default: 10,
-    },
     hashKey: {
       type: String,
       default: 'hash',
@@ -69,7 +65,7 @@ export default {
   },
   created() {
     this.activeKey = this.contents[0]?.[this.itemKey] || ''
-    this.updateActiveKey = debounce(this.updateActiveKey, 100)
+    this.updateActiveKey = debounce(this.updateActiveKey, 60)
   },
   mounted() {
     const container = document.querySelector(this.containerSelector)
@@ -108,34 +104,20 @@ export default {
         totalHeight: total
       }
     },
-    findItemByScrollOffset(
+    findItemByScrollRatio(
       list,
       cache,
       totalHeight,
       scrollTop,
-      clientHeight,
+      clientHeight
     ) {
       const maxScrollTop = Math.max(totalHeight - clientHeight, 0)
+      const ratio = maxScrollTop === 0 ? 0 : scrollTop / maxScrollTop
 
-      // ✅ 1. 视线焦点在内容中的位置 + 视线偏移量（一般用户不会关注在顶部）
-      const focusOffset = scrollTop + this.minContentHeight
-
-      // ✅ 2. 防越界（弹性滚动 / 程序设置）
-      const clampedOffset = Math.min(
-        Math.max(0, focusOffset),
-        totalHeight
-      )
-
-      // ✅ 3. 比例基于「已 clamp 的焦点」
-      const ratio =
-        maxScrollTop === 0
-          ? 0
-          : clampedOffset / totalHeight
-
-      // ✅ 4. 映射到内容高度
+      // 按比例推算目标高度
       const targetOffset = ratio * totalHeight
 
-      // ✅ 5. 二分查找
+      // 二分查找
       let low = 0
       let high = list.length - 1
 
@@ -151,21 +133,17 @@ export default {
           return {
             index: mid,
             item: list[mid],
-            offsetInItem: targetOffset - start,
-            focusOffset: clampedOffset,
-            ratio
+            offsetInItem: targetOffset - start
           }
         }
       }
 
-      // ✅ 6. 兜底（滚动到底部 / 越界）
+      // 滚动到底部，直接返回最后一项
       const lastIndex = list.length - 1
       return {
         index: lastIndex,
         item: list[lastIndex],
-        offsetInItem: list[lastIndex].height,
-        focusOffset: clampedOffset,
-        ratio: 1
+        offsetInItem: list[lastIndex].height
       }
     },
     async updateActiveKey() {
@@ -174,7 +152,7 @@ export default {
       const { scrollTop, clientHeight } = this.$container
 
       const { cache, totalHeight } = this.buildHeightMeta(this.contents)
-      const { index } = this.findItemByScrollOffset(
+      const { index } = this.findItemByScrollRatio(
         this.contents,
         cache,
         totalHeight,
@@ -202,13 +180,14 @@ export default {
       // Elements may not be rendered under virtual scrolling.
       const element = document.querySelector(item[this.hashKey])
       if (element) {
-        this.pendingUpdate = true
-        element.scrollIntoView()
+        element.scrollIntoView({
+          behavior: 'instant',
+        })
         await checkScrollCompletion(element)
       } else {
         this.$container.scrollTo({
           top: start,
-          behavior: 'smooth',
+          behavior: 'instant',
         })
         await checkScrollCompletion(this.$container)
       }

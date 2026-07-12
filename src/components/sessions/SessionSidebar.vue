@@ -92,8 +92,10 @@ export default defineComponent({
     })))
 
     const handleLoadSession = (id) => {
-      setCurrentSessionId(id)
-      loadSession(id)
+      if (id !== currentSessionId.value) {
+        setCurrentSessionId(id)
+        loadSession(id)
+      }
     }
 
     const handleDelete = async (id) => {
