@@ -163,7 +163,8 @@ export default defineComponent({
         this.htmlRafId = null
 
         // Convert HTML to vNodes so that every content change triggers Vue's diff algorithm for incremental updates only.
-        this.astTree = parseDocument(this.getHtml()).children
+        const html = this.getHtml()
+        this.astTree = html ? parseDocument(html).children : []
       })
     },
   },
