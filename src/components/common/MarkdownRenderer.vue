@@ -1,6 +1,10 @@
 <template>
   <div class="markdown-renderer">
-    <div ref="renderer" />
+    <NodeRenderer
+      v-for="(node, index) in renderedContent"
+      :key="index"
+      :node="node"
+    />
   </div>
 </template>
 
@@ -11,6 +15,8 @@ import remend from "remend"
 import { marked } from 'marked'
 import hljs from 'highlight.js/lib/common'
 import 'highlight.js/styles/vs.css'
+import { parseDocument } from 'htmlparser2'
+import NodeRenderer from './NodeRenderer.vue'
 
 // https://marked.js.org/using_pro#renderer
 const renderer = {
@@ -106,6 +112,9 @@ marked.setOptions({ breaks: true, gfm: true })
 
 export default defineComponent({
   name: 'MarkdownRenderer',
+  components: {
+    NodeRenderer
+  },
   props: {
     content: {
       type: String,
@@ -116,7 +125,14 @@ export default defineComponent({
     return {
       htmlRafId: null,
       pendingUpdate: false,
+      html: '',
     }
+  },
+  computed: {
+    renderedContent() {
+      // Convert HTML to vNodes so that every content change triggers Vue's diff algorithm for incremental updates only.
+      return parseDocument(this.html).children
+    },
   },
   watch: {
     content: {
@@ -151,10 +167,7 @@ export default defineComponent({
       this.htmlRafId = requestAnimationFrame(() => {
         this.pendingUpdate = false
         this.htmlRafId = null
-        // Optimized for vue2
-        // Avoid directly using `v-html` to prevent recursive updates lifecycle. 
-        // TODO: Progressively append
-        this.$refs.renderer.innerHTML = this.getHtml()
+        this.html = this.getHtml()
       })
     },
   },
