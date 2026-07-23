@@ -1,7 +1,7 @@
 <template>
   <div class="markdown-renderer">
     <NodeRenderer
-      v-for="(node, index) in renderedContent"
+      v-for="(node, index) in astTree"
       :key="index"
       :node="node"
     />
@@ -125,21 +125,15 @@ export default defineComponent({
     return {
       htmlRafId: null,
       pendingUpdate: false,
-      html: '',
+      astTree: [],
     }
-  },
-  computed: {
-    renderedContent() {
-      // Convert HTML to vNodes so that every content change triggers Vue's diff algorithm for incremental updates only.
-      return parseDocument(this.html).children
-    },
   },
   watch: {
     content: {
       handler() {
         if (!this.pendingUpdate) {
           this.pendingUpdate = true
-          this.updateHtml()
+          this.updateAstTree()
         }
       },
       immediate: true,
@@ -160,14 +154,16 @@ export default defineComponent({
        */
       return content ? DOMPurify.sanitize(marked(remend(content))) : ''
     },
-    updateHtml() {
+    updateAstTree() {
       if (this.htmlRafId) {
         cancelAnimationFrame(this.htmlRafId)
       }
       this.htmlRafId = requestAnimationFrame(() => {
         this.pendingUpdate = false
         this.htmlRafId = null
-        this.html = this.getHtml()
+
+        // Convert HTML to vNodes so that every content change triggers Vue's diff algorithm for incremental updates only.
+        this.astTree = parseDocument(this.getHtml()).children
       })
     },
   },
