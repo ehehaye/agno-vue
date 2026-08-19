@@ -1,0 +1,41 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scrollbar-width: @scrollbar-width;
+  scrollbar-color: @scrollbar-color;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+a,
+li {
+  text-decoration: none;
+}
+
+
+::selection {
+  color: #fff;
+  background-color: fade(@primary-color, 78%);
+}
+
+*::-webkit-scrollbar {
+  width: @scrollbar-width;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    fade(@primary-hover, 54%),
+    fade(@primary-color, 34%)
+  );
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -1,0 +1,130 @@
+@import './variables.less';
+@import './reset.less';
+
+html,
+body {
+  height: 100%;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(90, 149, 245, 0.22),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 88% 8%,
+      rgba(103, 194, 58, 0.16),
+      transparent 28%
+    ),
+    linear-gradient(135deg, #f8fbff 0%, @bg-color 48%, #f7fbff 100%);
+  font-family: @font-family;
+  color: @text-color;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#app {
+  height: 100%;
+}
+.ai-button,
+.ai-input,
+.ai-select,
+.ai-textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.ai-button {
+  position: relative;
+  background: @primary-color;
+  padding: @spacing-sm @spacing-md;
+  border-radius: @border-radius-md;
+  border-style: solid;
+  border-color: @primary-color;
+  border-width: 1px;
+  color: #fff;
+  outline: none;
+  cursor: pointer;
+  transition:
+    transform @transition-fast,
+    background @transition-base,
+    border-color @transition-fast,
+    color @transition-fast,
+    opacity @transition-fast;
+
+  &:hover:not([disabled]) {
+    background: @primary-hover;
+    border-color: @primary-hover;
+  }
+
+  &:active:not([disabled]) {
+    background: @primary-active;
+    border-color: @primary-active;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(63, 126, 232, 0.3);
+    outline-offset: 2px;
+  }
+
+  &[disabled] {
+    color: @text-disabled;
+    cursor: not-allowed;
+    background-color: #f2f4f7;
+    border-color: #ebeef5 !important;
+    opacity: 0.78;
+  }
+}
+
+.ai-textarea {
+  display: block;
+  padding: 12px 14px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  width: 100%;
+  resize: none;
+  font-size: inherit;
+  color: @text-color;
+  background-color: @surface-color;
+  border: 1px solid @border-color;
+  border-radius: @border-radius-lg;
+  transition:
+    border-color @transition-fast,
+    background-color @transition-fast;
+
+  &::placeholder {
+    color: @text-disabled;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: @primary-color;
+    outline: 2px solid rgba(63, 126, 232, 0.2);
+    outline-offset: -1px;
+  }
+}
+
+.ai-select {
+  border: 1px solid @border-color;
+  border-radius: @border-radius-md;
+  cursor: pointer;
+  background-color: @surface-color;
+  color: @text-color;
+  transition:
+    border-color @transition-fast,
+    background-color @transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: @primary-color;
+    outline: 2px solid rgba(63, 126, 232, 0.2);
+    outline-offset: -1px;
+  }
+
+  &:disabled {
+    color: @text-disabled;
+    background-color: #f5f7fb;
+    cursor: not-allowed;
+  }
+}
