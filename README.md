@@ -11,6 +11,10 @@ An Agno front-end UI interface built with Vue 2, providing a smooth user experie
 - **Code Highlighting**: Syntax highlighting for code blocks
 - **Progressive Markdown Rendering**: Full support for Markdown formatting
 
+## Preview
+
+![Agno Vue screenshot](./docs/images/screenshot.png)
+
 ## References
 
 - [Agno Official Documentation](https://docs.agno.com/)
