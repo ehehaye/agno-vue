@@ -4,10 +4,6 @@
 
 基于 Vue 2 构建的 Agno 前端 UI 界面，为 AI 智能体交互提供流畅的用户体验。项目设计支持平滑迁移至 Vue 3 版本。
 
-如果你正在使用 element-ui，我们提供了一个中文友好的 [element-ui 版本](https://github.com/ehehaye/agno-vue/tree/element-ui) 。
-
-![预览](http://momos-image-upyun.test.upcdn.net/uPic/2026/05/18/jBDUXC.png)
-
 ## 功能特性
 
 - **智能对话**: 与 AI 智能体进行自然语言交互
@@ -16,6 +12,10 @@
 - **Agent 切换**: 在不同智能体之间快速切换
 - **代码高亮**: 支持代码块语法高亮显示
 - **Markdown 渲染**: 完整支持 Markdown 格式渲染
+
+## 界面预览
+
+![Agno Vue 系统运行截图](./docs/images/screenshot.png)
 
 ## 技术栈
 
