@@ -1,81 +1,124 @@
+/**
+ * Parse a single SSE line into an event/data field.
+ * https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
+ */
 export function parseSSELine(line) {
-  if (line.startsWith('event:')) {
-    return { event: line.slice(6).trim() }
+  if (!line || line.startsWith(':')) {
+    return {}
   }
-  if (line.startsWith('data:')) {
-    return { data: line.slice(5).trim() }
+
+  const colonIndex = line.indexOf(':')
+  const field = colonIndex === -1 ? line : line.slice(0, colonIndex)
+  let value = colonIndex === -1 ? '' : line.slice(colonIndex + 1)
+
+  // The spec removes exactly one leading space from the field value.
+  if (value.startsWith(' ')) {
+    value = value.slice(1)
+  }
+
+  if (field === 'event') {
+    return { event: value }
+  }
+  if (field === 'data') {
+    return { data: value }
   }
   return {}
 }
 
-export function parseSSEStream(text, onEvent) {
-  const lines = text.split('\n')
-  let currentEvent = null
-  let currentData = null
-
-  for (const line of lines) {
-    const parsed = parseSSELine(line)
-
-    if (parsed.event) {
-      currentEvent = parsed.event
-    } else if (parsed.data) {
-      currentData = parsed.data
-    }
-
-    if (line === '' && currentEvent && currentData) {
-      try {
-        const parsedData = JSON.parse(currentData)
-        onEvent(parsedData)
-      } catch (e) {
-        console.error('Failed to parse SSE data:', currentData, e)
-      }
-      currentEvent = null
-      currentData = null
-    }
-  }
+export function parseSSEStream(text, onEvent, onError) {
+  const parser = new SSEParser({ onError })
+  parser.parse(text, onEvent)
+  parser.flush(onEvent)
 }
 
 export class SSEParser {
-  constructor() {
+  constructor({ onError } = {}) {
     this.buffer = ''
     this.currentEvent = null
-    this.currentData = null
+    this.dataLines = []
+    this.onError = onError
   }
 
+  /**
+   * Feed a chunk. Chunks may split lines, CRLF pairs, or multi-byte characters.
+   */
   parse(chunk, onEvent) {
     this.buffer += chunk
     const lines = this.buffer.split('\n')
+    this.buffer = lines.pop()
 
-    let i = 0
-    for (; i < lines.length - 1; i++) {
-      const line = lines[i]
-      const parsed = parseSSELine(line)
+    lines.forEach((line) => this.consumeLine(line, onEvent))
+  }
 
-      if (parsed.event) {
-        this.currentEvent = parsed.event
-      } else if (parsed.data) {
-        this.currentData = parsed.data
-      }
-
-      if (line === '' && this.currentEvent && this.currentData) {
-        try {
-          const parsedData = JSON.parse(this.currentData)
-          onEvent(parsedData)
-        } catch (e) {
-          console.error('Failed to parse SSE data:', this.currentData, e)
-        }
-        this.currentEvent = null
-        this.currentData = null
-      }
+  /**
+   * Flush a trailing line/event at the end of the stream.
+   */
+  flush(onEvent) {
+    if (this.buffer) {
+      this.consumeLine(this.buffer, onEvent)
+      this.buffer = ''
     }
-
-    this.buffer = lines[lines.length - 1]
+    this.dispatch(onEvent)
   }
 
   reset() {
     this.buffer = ''
     this.currentEvent = null
-    this.currentData = null
+    this.dataLines = []
+  }
+
+  consumeLine(rawLine, onEvent) {
+    const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine
+
+    if (line === '') {
+      this.dispatch(onEvent)
+      return
+    }
+
+    const parsed = parseSSELine(line)
+    if (Object.prototype.hasOwnProperty.call(parsed, 'event')) {
+      this.currentEvent = parsed.event
+    } else if (Object.prototype.hasOwnProperty.call(parsed, 'data')) {
+      this.dataLines.push(parsed.data)
+    }
+  }
+
+  dispatch(onEvent) {
+    if (this.dataLines.length === 0) {
+      this.currentEvent = null
+      return
+    }
+
+    const rawData = this.dataLines.join('\n')
+    const eventName = this.currentEvent
+    this.currentEvent = null
+    this.dataLines = []
+
+    let payload
+    try {
+      payload = JSON.parse(rawData)
+    } catch (err) {
+      if (this.onError) {
+        this.onError(err, rawData)
+      } else {
+        console.error('Failed to parse SSE data:', rawData, err)
+      }
+      return
+    }
+
+    // Agno payloads usually carry their own `event` field. Fall back to the
+    // SSE `event:` line so the parser also works with standard event streams.
+    if (
+      eventName &&
+      payload !== null &&
+      typeof payload === 'object' &&
+      !Array.isArray(payload) &&
+      !payload.event
+    ) {
+      payload.event = eventName
+    }
+
+    onEvent(payload)
   }
 }
 
