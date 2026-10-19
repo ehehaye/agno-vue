@@ -65,7 +65,7 @@ export default {
   },
   created() {
     this.activeKey = this.contents[0]?.[this.itemKey] || ''
-    this.updateActiveKey = debounce(this.updateActiveKey, 60)
+    this.updateActiveKey = debounce(this.updateActiveKey, 200)
   },
   mounted() {
     const container = document.querySelector(this.containerSelector)
@@ -143,11 +143,15 @@ export default {
       return {
         index: lastIndex,
         item: list[lastIndex],
-        offsetInItem: list[lastIndex].height
+        offsetInItem: 0
       }
     },
     async updateActiveKey() {
       await this.$nextTick()
+
+      if (!this.$container || !this.contents.length) {
+        return
+      }
 
       const { scrollTop, clientHeight } = this.$container
 
@@ -159,9 +163,13 @@ export default {
         scrollTop,
         clientHeight
       )
-      this.activeKey = this.contents[index][this.itemKey]
-      const [activeItem] = this.$refs[this.activeKey]
-      activeItem.scrollIntoView({
+      const activeItem = this.contents[index]
+      if (!activeItem) {
+        return
+      }
+      this.activeKey = activeItem[this.itemKey]
+      const [activeRef] = this.$refs[this.activeKey] || []
+      activeRef?.scrollIntoView({
         block: 'center',
         container: 'nearest',
         behavior: 'smooth',
@@ -175,23 +183,26 @@ export default {
     async onNavClick(item, idx) {
       this.pendingUpdate = true
       this.activeKey = item[this.itemKey]
-      const { cache } = this.buildHeightMeta(this.contents)
-      const { start } = cache[idx]
-      // Elements may not be rendered under virtual scrolling.
-      const element = document.querySelector(item[this.hashKey])
-      if (element) {
-        element.scrollIntoView({
-          behavior: 'instant',
-        })
-        await checkScrollCompletion(element)
-      } else {
-        this.$container.scrollTo({
-          top: start,
-          behavior: 'instant',
-        })
-        await checkScrollCompletion(this.$container)
+      try {
+        const { cache } = this.buildHeightMeta(this.contents)
+        const { start } = cache[idx]
+        // Elements may not be rendered under virtual scrolling.
+        const element = document.querySelector(item[this.hashKey])
+        if (element) {
+          element.scrollIntoView({
+            behavior: 'instant',
+          })
+          await checkScrollCompletion(element)
+        } else {
+          this.$container.scrollTo({
+            top: start,
+            behavior: 'instant',
+          })
+          await checkScrollCompletion(this.$container)
+        }
+      } finally {
+        this.pendingUpdate = false
       }
-      this.pendingUpdate = false
     },
   },
 }

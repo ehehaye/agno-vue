@@ -38,6 +38,11 @@
       <DurationBlock :duration="message.metrics?.duration" />
     </template>
 
+    <!-- error block -->
+    <template v-if="message.status === $c.RunStatus.Error">
+      <span class="mt-sm text-xs text-danger">{{ message.error || $t('chat.generationFailed') }}</span>
+    </template>
+
     <!-- cancelled block -->
     <template v-if="message.status === $c.RunStatus.Cancelled">
       <span class="mt-sm text-xs text-ink-muted">{{ $t('chat.stopped') }}</span>

@@ -6,6 +6,7 @@
       class="ai-textarea"
       :rows="`${maxRows}`"
       :placeholder="$t('chat.placeholder')"
+      :disabled="loading"
       @keydown="handleKeydown"
       @compositionstart="handleCompositionStart"
       @compositionend="handleCompositionEnd"
@@ -14,6 +15,7 @@
       <button
         v-if="streaming"
         class="ai-button send-button streaming"
+        :aria-label="$t('chat.stop')"
         @click="$emit('cancel')"
       >
         <StopIcon />
@@ -22,6 +24,7 @@
         v-else
         class="ai-button send-button"
         :disabled="disabled"
+        :aria-label="$t('chat.send')"
         @click="send()"
       >
         <SendIcon />
@@ -42,6 +45,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
 })
 const emit = defineEmits(['send', 'cancel'])
 
@@ -53,7 +60,7 @@ const { focus } = useAutoFocus(textareaRef)
 
 const rows = computed(() => value.value.split('\n').length || 1)
 const maxRows = computed(() => rows.value >= 3 ? 3 : rows.value)
-const disabled = computed(() => !props.streaming && !value.value.trim())
+const disabled = computed(() => props.loading || (!props.streaming && !value.value.trim()))
 
 const send = () => {
   if (disabled.value) {
@@ -66,7 +73,7 @@ const send = () => {
 }
 
 const handleKeydown = async (event) => {
-  if (composing.value || event.isComposing || event.keyCode === 229) {
+  if (props.loading || composing.value || event.isComposing || event.keyCode === 229) {
     return
   }
 

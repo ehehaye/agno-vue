@@ -6,6 +6,7 @@
     <button
       type="button"
       class="collapse-header"
+      :aria-expanded="expanded"
       @click="toggle"
     >
       <div
@@ -26,6 +27,7 @@
       </div>
     </button>
     <div
+      v-if="rendered"
       v-show="expanded"
       class="collapse-body"
     >
@@ -52,10 +54,16 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    // Avoid mounting expensive content (Markdown, highlighting) until first expand.
+    lazy: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
       internalExpanded: this.value,
+      rendered: this.value || !this.lazy,
     }
   },
   computed: {
@@ -66,11 +74,17 @@ export default defineComponent({
   watch: {
     value(newValue) {
       this.internalExpanded = newValue
+      if (newValue) {
+        this.rendered = true
+      }
     },
   },
   methods: {
     toggle() {
       this.internalExpanded = !this.internalExpanded
+      if (this.internalExpanded) {
+        this.rendered = true
+      }
       this.$emit('input', this.internalExpanded)
       this.$emit('toggle', this.internalExpanded)
     },
