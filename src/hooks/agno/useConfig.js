@@ -3,16 +3,21 @@ import { $c } from '@/constants'
 import { readStorage, writeStorage } from '@/utils/storage'
 
 const DEFAULT_SERVER_URL = `${window.location.protocol}//${window.location.host}/agno`
+const CONNECT_TIMEOUT = 8000
 
-const serverUrl = ref(readStorage('serverUrl', DEFAULT_SERVER_URL))
+export const defaultServerUrl = DEFAULT_SERVER_URL
+
+const serverUrl = ref(readStorage('serverUrl', ''))
 const selectedEntity = ref(readStorage('entity', null))
 const selectedEntityType = computed(() => selectedEntity.value?.type)
 const currentSessionId = ref(null)
 const connectionStatus = ref($c.ConnStatus.Disconnected)
+const isVerified = ref(false)
 const agents = ref([])
 const teams = ref([])
 const error = ref(null)
 const refreshing = ref(false)
+let connectPromise = null
 
 export function useConfig() {
   const setServerUrl = (url) => {
@@ -20,8 +25,15 @@ export function useConfig() {
     if (!next) {
       return
     }
+    const changed = next !== serverUrl.value
     serverUrl.value = next
     writeStorage('serverUrl', next)
+    if (changed) {
+      isVerified.value = false
+      if (connectionStatus.value === $c.ConnStatus.Connected) {
+        disconnect()
+      }
+    }
   }
 
   const setCurrentSessionId = (id) => {
@@ -30,6 +42,7 @@ export function useConfig() {
 
   const disconnect = () => {
     connectionStatus.value = $c.ConnStatus.Disconnected
+    isVerified.value = false
     agents.value = []
     teams.value = []
     error.value = null
@@ -40,7 +53,9 @@ export function useConfig() {
   const connect = async () => {
     if (!serverUrl.value.trim()) {
       error.value = 'Please enter a server URL'
-      return
+      connectionStatus.value = $c.ConnStatus.Disconnected
+      isVerified.value = false
+      return false
     }
 
     connectionStatus.value = $c.ConnStatus.Connecting
@@ -48,11 +63,14 @@ export function useConfig() {
     agents.value = []
     teams.value = []
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), CONNECT_TIMEOUT)
+
     try {
       // Fetch agents and teams in parallel
       const [agentsResponse, teamsResponse] = await Promise.all([
-        fetch(`${serverUrl.value}/agents`),
-        fetch(`${serverUrl.value}/teams`),
+        fetch(`${serverUrl.value}/agents`, { signal: controller.signal }),
+        fetch(`${serverUrl.value}/teams`, { signal: controller.signal }),
       ])
 
       if (!agentsResponse.ok) {
@@ -64,6 +82,10 @@ export function useConfig() {
 
       const agentsData = await agentsResponse.json()
       const teamsData = await teamsResponse.json()
+
+      if (!Array.isArray(agentsData) || !Array.isArray(teamsData)) {
+        throw new Error('Unexpected response from server')
+      }
 
       agents.value = agentsData
       teams.value = teamsData
@@ -80,14 +102,42 @@ export function useConfig() {
         selectDefaultAgent()
       } else if (teams.value.length > 0) {
         selectDefaultTeam()
+      } else {
+        selectedEntity.value = null
       }
 
+      isVerified.value = true
       connectionStatus.value = $c.ConnStatus.Connected
+      return true
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to connect to server'
+      const errorMessage =
+        err?.name === 'AbortError'
+          ? 'Connection timed out'
+          : err instanceof Error
+            ? err.message
+            : 'Failed to connect to server'
       error.value = errorMessage
+      isVerified.value = false
       connectionStatus.value = $c.ConnStatus.Error
+      return false
+    } finally {
+      clearTimeout(timeoutId)
     }
+  }
+
+  const ensureConnected = async () => {
+    if (isVerified.value && connectionStatus.value === $c.ConnStatus.Connected) {
+      return true
+    }
+    if (!serverUrl.value.trim()) {
+      return false
+    }
+    if (!connectPromise) {
+      connectPromise = connect().finally(() => {
+        connectPromise = null
+      })
+    }
+    return connectPromise
   }
 
   const refresh = async () => {
@@ -154,8 +204,11 @@ export function useConfig() {
 
   return {
     serverUrl,
+    defaultServerUrl,
     setServerUrl,
     connectionStatus,
+    isVerified,
+    ensureConnected,
     agents,
     teams,
     selectedEntity,

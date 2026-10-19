@@ -5,7 +5,8 @@ Agno Vue — Vue 2 chat UI for an Agno agent/team backend, with SSE streaming an
 ## Project
 
 - Stack: Vue 2.6.14 + `@vue/composition-api`, Vite 8 (`vite-plugin-vue2`), Less, vue-i18n 8 (zh/en).
-- Entry point: `src/main.js` → `src/App.vue` (mounts, calls `connect()` on mount).
+- Entry point: `src/main.js` → `src/App.vue` (`<router-view>`); routing lives in `src/router/index.js` (hash mode).
+- Route guard: every non-Setup route requires a persisted `serverUrl` and a successful `/agents` + `/teams` verification (`ensureConnected`), otherwise it redirects to `SetupView`. `ConfigPanel` links to `/#/setup` for changing the server.
 - Talks to an Agno server (default `location.origin + '/agno'`, proxied by Vite to `http://localhost:7777` in dev).
 - Unit tests use Node's built-in test runner (`tests/*.test.js`; alias resolution is registered by `tests/register-alias.mjs`). Verification = `pnpm lint:check` + `pnpm test` + `pnpm build`.
 
@@ -24,7 +25,8 @@ npx eslint src --ext .vue,.js               # read-only lint check
 
 ## Architecture
 
-- `src/hooks/agno/useConfig.js` — singleton state: `serverUrl`, `agents`/`teams` (fetched from `/agents`, `/teams`), `selectedEntity`, `currentSessionId`, `connectionStatus`.
+- `src/hooks/agno/useConfig.js` — singleton state: `serverUrl` (persisted, empty until Setup configures it), `agents`/`teams` (fetched from `/agents`, `/teams`), `selectedEntity`, `currentSessionId`, `connectionStatus`, `isVerified`; `connect()`/`ensureConnected()` perform the guarded connectivity check.
+- `src/views/` — `ChatView` (AppLayout + sidebar + ChatInterface) and `SetupView` (server URL form); both are lazily loaded by the router.
 - `src/hooks/agno/useAgentRun.js` — the core: POSTs `/agents|teams/{id}/runs` (form-urlencoded, `stream=true`), feeds chunks through `SSEParser`, keeps shared `currentRun`/`messages` state, and handles cancellation/errors. Pure event transitions live in `runState.js`; `/sessions/{id}/runs` history reconstruction lives in `historyMapper.js`.
 - `src/hooks/agno/useSessionManager.js` — session list/paging via `/sessions`; listens on the module-level `events` bus (`RuntimeEvents.SESSION_CREATED`).
 - `src/utils/sse-parser.js` — buffered `SSEParser` (chunk-boundary safe) + `parseSSELine`/`parseSSEStream`.

@@ -5,30 +5,10 @@
     </div>
     <div class="config-content">
       <div class="form-item">
-        <label class="form-label">{{ $t('sidebar.serverUrl') }}</label>
-        <div class="form-row">
-          <input
-            v-model="serverUrlDraft"
-            class="form-select ai-select"
-            :disabled="busy"
-            @keydown.enter.prevent="applyServerUrl"
-          >
-          <button
-            type="button"
-            class="ai-button config-apply"
-            :disabled="busy"
-            @click="applyServerUrl"
-          >
-            {{ $t('sidebar.reconnect') }}
-          </button>
-        </div>
-      </div>
-
-      <div class="form-item">
         <label class="form-label">{{ $t('sidebar.mode') }}</label>
         <select
           :value="selectedEntityType"
-          :disabled="isStreaming"
+          :disabled="busy"
           class="form-select ai-select"
           @change="handleEntityTypeChange"
         >
@@ -51,7 +31,7 @@
         <label class="form-label">{{ $t('sidebar.agent') }}</label>
         <select
           :value="selectedEntity?.id || ''"
-          :disabled="isStreaming"
+          :disabled="busy"
           class="form-select ai-select"
           @change="handleEntityChange"
         >
@@ -64,12 +44,19 @@
           </option>
         </select>
       </div>
+
+      <router-link
+        to="/setup"
+        class="config-link"
+      >
+        {{ $t('sidebar.serverSettings') }}
+      </router-link>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from '@vue/composition-api'
+import { computed } from '@vue/composition-api'
 import { useAgentRun } from '@/hooks/agno/useAgentRun'
 import { useConfig } from '@/hooks/agno/useConfig'
 import { usePerfTrack } from '@/hooks/usePerfTrack'
@@ -77,26 +64,11 @@ import { usePerfTrack } from '@/hooks/usePerfTrack'
 usePerfTrack()
 const { isStreaming, isLoadingSession } = useAgentRun()
 const {
-  serverUrl, setServerUrl, connect, disconnect,
   agents, teams, selectedEntity, selectedEntityType,
   selectEntity, selectDefaultAgent, selectDefaultTeam,
 } = useConfig()
 
-const serverUrlDraft = ref(serverUrl.value)
-const applying = ref(false)
-const busy = computed(() => isStreaming.value || isLoadingSession.value || applying.value)
-
-const applyServerUrl = async () => {
-  const next = serverUrlDraft.value.trim()
-  if (!next || next === serverUrl.value) {
-    return
-  }
-  applying.value = true
-  setServerUrl(next)
-  disconnect()
-  await connect()
-  applying.value = false
-}
+const busy = computed(() => isStreaming.value || isLoadingSession.value)
 
 const entities = computed(() =>
   selectedEntityType.value === 'team' ? teams.value : agents.value
@@ -161,25 +133,27 @@ const handleEntityChange = (event) => {
       font-weight: 600;
     }
 
-    .form-row {
-      display: flex;
-      flex: 1;
-      gap: @spacing-sm;
-      min-width: 0;
-    }
-
-    .config-apply {
-      flex-shrink: 0;
-      padding: 0 @spacing-md;
-      font-size: 12px;
-    }
-
     .form-select {
       width: 100%;
       min-width: 0;
       padding: 9px 10px;
       font-size: 14px;
       background-color: @surface-color;
+    }
+  }
+
+  .config-link {
+    display: block;
+    margin-top: @spacing-md;
+    padding-top: @spacing-sm;
+    border-top: 1px solid @border-light;
+    font-size: 12px;
+    color: @text-secondary;
+    text-align: center;
+    transition: color @transition-fast;
+
+    &:hover {
+      color: @primary-color;
     }
   }
 }
