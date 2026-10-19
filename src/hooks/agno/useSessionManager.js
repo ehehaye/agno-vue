@@ -9,6 +9,8 @@ const totalCount = ref(0)
 const isLoading = ref(false)
 const error = ref(null)
 const selectedSessionIds = ref(new Set())
+let sessionsRequestToken = 0
+let sessionsController = null
 
 export function useSessionManager() {
   const {
@@ -28,6 +30,9 @@ export function useSessionManager() {
   })
 
   const resetState = () => {
+    sessionsRequestToken += 1
+    sessionsController?.abort()
+    sessionsController = null
     sessions.value = []
     page.value = 1
     totalPages.value = 1
@@ -35,9 +40,18 @@ export function useSessionManager() {
   }
 
   const fetchSessions = async (pageNum = 1) => {
-    if (connectionStatus.value !== 'connected') {
+    if (
+      connectionStatus.value !== 'connected' ||
+      !selectedEntity.value
+    ) {
       return
     }
+
+    sessionsRequestToken += 1
+    const token = sessionsRequestToken
+    sessionsController?.abort()
+    const controller = new AbortController()
+    sessionsController = controller
 
     isLoading.value = true
     error.value = null
@@ -56,7 +70,8 @@ export function useSessionManager() {
       })
 
       const response = await fetch(
-        `${serverUrl.value}/sessions?${params.toString()}`
+        `${serverUrl.value}/sessions?${params.toString()}`,
+        { signal: controller.signal }
       )
 
       if (!response.ok) {
@@ -67,15 +82,19 @@ export function useSessionManager() {
 
       const data = await response.json()
 
+      if (token !== sessionsRequestToken) {
+        return
+      }
+
       // Add session_type to each session
-      const sessionsWithType = data.data.map((s) => ({
+      const sessionsWithType = (data.data || []).map((s) => ({
         ...s,
         session_type: selectedEntity.value.type,
       }))
       allSessions.push(...sessionsWithType)
 
-      maxTotalPages = Math.max(maxTotalPages, data.meta.total_pages)
-      sumTotalCount += data.meta.total_count
+      maxTotalPages = Math.max(maxTotalPages, data.meta?.total_pages || 1)
+      sumTotalCount += data.meta?.total_count || sessionsWithType.length
 
       // Sort by updated_at descending (most recent first)
       allSessions.sort(
@@ -88,10 +107,18 @@ export function useSessionManager() {
       totalPages.value = maxTotalPages
       totalCount.value = sumTotalCount
     } catch (err) {
+      if (token !== sessionsRequestToken || err?.name === 'AbortError') {
+        return
+      }
       error.value =
         err instanceof Error ? err.message : 'Failed to fetch sessions'
     } finally {
-      isLoading.value = false
+      if (token === sessionsRequestToken) {
+        isLoading.value = false
+        if (sessionsController === controller) {
+          sessionsController = null
+        }
+      }
     }
   }
 
@@ -134,7 +161,11 @@ export function useSessionManager() {
       if (session_ids.includes(currentSessionId.value)) {
         setCurrentSessionId(null)
       }
-      await fetchSessions(page.value)
+      const nextPage =
+        session_ids.length >= sessions.value.length && page.value > 1
+          ? page.value - 1
+          : page.value
+      await fetchSessions(nextPage)
       return true
     } catch (err) {
       error.value =

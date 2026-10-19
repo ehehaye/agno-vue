@@ -32,19 +32,52 @@ const {
   isManualScrolling, isManuallyMovedToSafeArea, restart
 } = useManualScrollDetector(containerRef, { threshold: '100' }) // TODO: ratio threshold
 
-const getFirstMessageKey = messages => messages?.[0]?.[props.messageKey]
+const getFirstMessageKey = (messages = []) => messages?.[0]?.[props.messageKey]
+
+const getLastMessageSize = () => {
+  const messages = props.messages || []
+  const last = messages[messages.length - 1]
+  if (!last) return 0
+
+  const stream = last.streamMessage
+  const memberSize =
+    stream?.member_runs?.reduce(
+      (sum, run) =>
+        sum +
+        (run.content?.length || 0) +
+        (run.reasoning_content?.length || 0) +
+        (run.tool_calls?.length || 0),
+      0
+    ) || 0
+
+  return (
+    (last.content?.length || 0) +
+    (stream?.content?.length || 0) +
+    (stream?.reasoning_content?.length || 0) +
+    (stream?.tool_calls?.length || 0) +
+    memberSize
+  )
+}
 
 watch(
-  () => props.messages,
-  async (next, prev) => {
+  [
+    () => getFirstMessageKey(props.messages),
+    () => props.messages.length,
+    getLastMessageSize,
+  ],
+  async ([firstKey, length, lastSize], [prevFirstKey, prevLength, prevLastSize]) => {
     // Session context changed
-    if (getFirstMessageKey(next) !== getFirstMessageKey(prev)) {
+    if (firstKey !== prevFirstKey) {
       return
     }
 
     // Append message
-    if (next.length > prev.length) {
+    if (length > prevLength) {
       restart()
+    }
+
+    if (length === prevLength && lastSize === prevLastSize) {
+      return
     }
 
     // Append chunk to last message
@@ -54,9 +87,7 @@ watch(
       await nextTick()
       scrollIntoView(messagesEndRef.value, { behavior: 'instant' })
     }
-    return
-  },
-  { deep: true }
+  }
 )
 </script>
 

@@ -9,6 +9,20 @@
         +
       </button>
     </div>
+    <div
+      v-if="sessionsError"
+      class="flex items-center justify-between gap-sm px-md py-xs text-xs text-danger"
+      role="alert"
+    >
+      <span class="min-w-0 truncate">{{ $t('sidebar.loadFailed') }}: {{ sessionsError }}</span>
+      <button
+        type="button"
+        class="flex-shrink-0 underline"
+        @click="refreshSessions"
+      >
+        {{ $t('sidebar.retry') }}
+      </button>
+    </div>
     <RecycleScroller
       v-if="displayedSessions.length"
       :items="displayedSessions"
@@ -64,7 +78,13 @@ import i18n from '@/lang'
 usePerfTrack()
 const { currentSessionId, setCurrentSessionId } = useConfig()
 const { loadSession } = useAgentRun()
-const { sessions, selectedSessionIds, deleteSelectedSessions } = useSessionManager()
+const {
+  sessions,
+  selectedSessionIds,
+  deleteSelectedSessions,
+  error: sessionsError,
+  refreshSessions,
+} = useSessionManager()
 const sessionItemHeight = 64
 
 const formatTime = (time) => new Date(time).toLocaleString()

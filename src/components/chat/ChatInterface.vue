@@ -2,7 +2,13 @@
   <div class="chat-interface">
     <div class="chat-messages">
       <div
-        v-if="displayMessages.length === 0"
+        v-if="isLoadingSession"
+        class="loading-state"
+      >
+        <StreamingIndicator />
+      </div>
+      <div
+        v-else-if="displayMessages.length === 0"
         class="empty-state"
       >
         <div class="empty-icon">💬</div>
@@ -27,9 +33,26 @@
       </template>
     </div>
 
+    <div
+      v-if="runError"
+      class="mx-auto mb-sm flex w-content items-center justify-between gap-sm rounded-md border border-danger bg-surface-muted px-md py-sm text-sm text-danger"
+      role="alert"
+    >
+      <span class="min-w-0 flex-1 break-words">{{ runError }}</span>
+      <button
+        type="button"
+        class="flex-shrink-0 cursor-pointer border-0 bg-transparent px-sm text-lg leading-none text-danger"
+        :aria-label="$t('chat.dismiss')"
+        @click="dismissError"
+      >
+        &times;
+      </button>
+    </div>
+
     <Sender
       class="sender"
       :streaming="isStreaming"
+      :loading="isLoadingSession"
       @cancel="cancelRun"
       @send="handleSend"
     />
@@ -41,13 +64,21 @@ import { computed } from '@vue/composition-api'
 import Sender from '@/components/ai/Sender.vue'
 import StickToBottom from '@/components/ai/StickToBottom.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
-import { Toc } from '@/components/common'
+import { StreamingIndicator, Toc } from '@/components/common'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 import { $c } from '@/constants'
 
 usePerfTrack()
-const { messages, currentRun, isStreaming, sendMessage, cancelRun } = useAgentRun()
+const {
+  messages,
+  currentRun,
+  isStreaming,
+  isLoadingSession,
+  error: runError,
+  sendMessage,
+  cancelRun,
+} = useAgentRun()
 
 const minContentHeight = 60
 
@@ -89,6 +120,10 @@ const tocContents = computed(() => displayMessages.value
 const handleSend = async (text) => {
   await sendMessage(text)
 }
+
+const dismissError = () => {
+  runError.value = null
+}
 </script>
 
 <style lang="less" scoped>
@@ -127,6 +162,13 @@ const handleSend = async (text) => {
     .message-item {
       width: @content-width;
       margin: 0 auto;
+    }
+
+    .loading-state {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .empty-state {

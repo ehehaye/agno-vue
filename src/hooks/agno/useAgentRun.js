@@ -10,8 +10,11 @@ import { $c } from '@/constants'
 const messages = ref([])
 const currentRun = ref(null)
 const isStreaming = ref(false)
+const isLoadingSession = ref(false)
 const error = ref(null)
 let activeController = null
+let activeSessionController = null
+let sessionLoadToken = 0
 
 function getEventError(event) {
   if (typeof event.error === 'string') {
@@ -504,8 +507,17 @@ export function useAgentRun() {
     activeController?.abort()
   }
 
+  function cancelSessionLoad() {
+    sessionLoadToken += 1
+    if (activeSessionController) {
+      activeSessionController.abort()
+      activeSessionController = null
+    }
+  }
+
   function clearMessages() {
     cancelRun()
+    cancelSessionLoad()
     messages.value = []
     currentRun.value = null
     error.value = null
@@ -530,12 +542,23 @@ export function useAgentRun() {
       return
     }
 
-    isStreaming.value = true
+    cancelRun()
+    cancelSessionLoad()
+    const token = ++sessionLoadToken
+    const controller = new AbortController()
+    activeSessionController = controller
+
+    isLoadingSession.value = true
     error.value = null
+    messages.value = []
+    currentRun.value = null
+    parser.reset()
+    memberRuns.clear()
 
     try {
       const response = await fetch(
-        `${serverUrl.value}/sessions/${targetSessionId}/runs`
+        `${serverUrl.value}/sessions/${targetSessionId}/runs`,
+        { signal: controller.signal }
       )
 
       if (!response.ok) {
@@ -543,6 +566,10 @@ export function useAgentRun() {
       }
 
       const runs = await response.json()
+
+      if (token !== sessionLoadToken) {
+        return
+      }
 
       const topLevelRuns = runs.filter((r) => !r.parent_run_id)
       const childRuns = runs.filter((r) => r.parent_run_id)
@@ -718,13 +745,22 @@ export function useAgentRun() {
         }
       })
 
+      if (token !== sessionLoadToken) {
+        return
+      }
+
       messages.value = loadedMessages
     } catch (err) {
-      const errorMessage =
+      if (token !== sessionLoadToken || err?.name === 'AbortError') {
+        return
+      }
+      error.value =
         err instanceof Error ? err.message : 'Failed to load session'
-      error.value = errorMessage
     } finally {
-      isStreaming.value = false
+      if (token === sessionLoadToken) {
+        isLoadingSession.value = false
+        activeSessionController = null
+      }
     }
   }
 
@@ -732,6 +768,7 @@ export function useAgentRun() {
     messages,
     currentRun,
     isStreaming,
+    isLoadingSession,
     error,
     sendMessage,
     loadSession,

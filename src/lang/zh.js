@@ -14,6 +14,8 @@ export default {
     deleteConfirm: '确定要删除这个会话吗？',
     prompt: '提示',
     agent: '智能体',
+    retry: '重试',
+    loadFailed: '会话加载失败',
   },
   chat: {
     emptyState: '开始一段新会话吧',
@@ -22,6 +24,8 @@ export default {
     send: '发送',
     stop: '停止',
     stopped: '已停止',
+    generationFailed: '生成失败',
+    dismiss: '关闭',
     thinking: '思考中...',
   },
   toolCall: {

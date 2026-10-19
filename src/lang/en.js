@@ -14,6 +14,8 @@ export default {
     deleteConfirm: 'Are you sure you want to delete this conversation?',
     prompt: 'Prompt',
     agent: 'Agent',
+    retry: 'Retry',
+    loadFailed: 'Failed to load sessions',
   },
   chat: {
     emptyState: 'Start a new conversation',
@@ -22,6 +24,8 @@ export default {
     send: 'Send',
     stop: 'Stop',
     stopped: 'Stopped',
+    generationFailed: 'Generation failed',
+    dismiss: 'Dismiss',
     thinking: 'Thinking...',
   },
   toolCall: {
