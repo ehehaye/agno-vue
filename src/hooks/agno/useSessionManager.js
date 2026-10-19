@@ -1,6 +1,7 @@
 import { ref, watch } from '@vue/composition-api'
 import { useConfig } from './useConfig'
 import events, { RuntimeEvents } from './events'
+import { $c } from '@/constants'
 
 const sessions = ref([])
 const page = ref(1)
@@ -12,201 +13,187 @@ const selectedSessionIds = ref(new Set())
 let sessionsRequestToken = 0
 let sessionsController = null
 
-export function useSessionManager() {
-  const {
-    serverUrl,
-    connectionStatus,
-    selectedEntity,
-    currentSessionId,
-    setCurrentSessionId,
-  } = useConfig()
+const {
+  serverUrl,
+  connectionStatus,
+  selectedEntity,
+  currentSessionId,
+  setCurrentSessionId,
+} = useConfig()
 
-  events.on(RuntimeEvents.SESSION_CREATED, (session) => {
-    sessions.value.unshift({
-      ...session,
-    })
-    setCurrentSessionId(session.session_id)
-    // TODO: handle pages
-  })
+function resetState() {
+  sessionsRequestToken += 1
+  sessionsController?.abort()
+  sessionsController = null
+  sessions.value = []
+  page.value = 1
+  totalPages.value = 1
+  totalCount.value = 0
+}
 
-  const resetState = () => {
-    sessionsRequestToken += 1
-    sessionsController?.abort()
-    sessionsController = null
-    sessions.value = []
-    page.value = 1
-    totalPages.value = 1
-    totalCount.value = 0
+async function fetchSessions(pageNum = 1) {
+  if (connectionStatus.value !== $c.ConnStatus.Connected || !selectedEntity.value) {
+    return
   }
 
-  const fetchSessions = async (pageNum = 1) => {
-    if (
-      connectionStatus.value !== 'connected' ||
-      !selectedEntity.value
-    ) {
+  sessionsRequestToken += 1
+  const token = sessionsRequestToken
+  sessionsController?.abort()
+  const controller = new AbortController()
+  sessionsController = controller
+
+  isLoading.value = true
+  error.value = null
+
+  try {
+    const params = new URLSearchParams({
+      type: selectedEntity.value.type,
+      component_id: selectedEntity.value.id,
+      page: String(pageNum),
+      limit: '20',
+    })
+
+    const response = await fetch(
+      `${serverUrl.value}/sessions?${params.toString()}`,
+      { signal: controller.signal }
+    )
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${selectedEntity.value.type} sessions: ${response.status}`
+      )
+    }
+
+    const data = await response.json()
+
+    if (token !== sessionsRequestToken) {
       return
     }
 
-    sessionsRequestToken += 1
-    const token = sessionsRequestToken
-    sessionsController?.abort()
-    const controller = new AbortController()
-    sessionsController = controller
-
-    isLoading.value = true
-    error.value = null
-
-    try {
-      // Fetch sessions for each type
-      const allSessions = []
-      let maxTotalPages = 1
-      let sumTotalCount = 0
-
-      const params = new URLSearchParams({
-        type: selectedEntity.value.type,
-        component_id: selectedEntity.value.id,
-        page: String(pageNum),
-        limit: '20',
-      })
-
-      const response = await fetch(
-        `${serverUrl.value}/sessions?${params.toString()}`,
-        { signal: controller.signal }
-      )
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch ${selectedEntity.value.type} sessions: ${response.status}`
-        )
-      }
-
-      const data = await response.json()
-
-      if (token !== sessionsRequestToken) {
-        return
-      }
-
-      // Add session_type to each session
-      const sessionsWithType = (data.data || []).map((s) => ({
-        ...s,
+    const sessionsWithType = (data.data || [])
+      .map((session) => ({
+        ...session,
         session_type: selectedEntity.value.type,
       }))
-      allSessions.push(...sessionsWithType)
-
-      maxTotalPages = Math.max(maxTotalPages, data.meta?.total_pages || 1)
-      sumTotalCount += data.meta?.total_count || sessionsWithType.length
-
-      // Sort by updated_at descending (most recent first)
-      allSessions.sort(
+      .sort(
         (a, b) =>
           new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       )
 
-      sessions.value = allSessions
-      page.value = pageNum
-      totalPages.value = maxTotalPages
-      totalCount.value = sumTotalCount
-    } catch (err) {
-      if (token !== sessionsRequestToken || err?.name === 'AbortError') {
-        return
-      }
-      error.value =
-        err instanceof Error ? err.message : 'Failed to fetch sessions'
-    } finally {
-      if (token === sessionsRequestToken) {
-        isLoading.value = false
-        if (sessionsController === controller) {
-          sessionsController = null
-        }
-      }
+    sessions.value = sessionsWithType
+    page.value = pageNum
+    totalPages.value = Math.max(1, data.meta?.total_pages || 1)
+    totalCount.value = data.meta?.total_count || sessionsWithType.length
+  } catch (err) {
+    if (token !== sessionsRequestToken || err?.name === 'AbortError') {
+      return
     }
-  }
-
-  const refreshSessions = async () => {
-    await fetchSessions(page.value)
-  }
-
-  const deleteSelectedSessions = async () => {
-    if (selectedSessionIds.value.size === 0) {
-      return false
-    }
-
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const selectedSessions = sessions.value.filter((s) =>
-        selectedSessionIds.value.has(s.session_id)
-      )
-      const session_ids = selectedSessions.map((s) => s.session_id)
-      const session_types = selectedSessions.map((s) => s.session_type)
-
-      const response = await fetch(`${serverUrl.value}/sessions`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_ids,
-          session_types,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete sessions: ${response.status}`)
-      }
-
-      // Clear selection and refresh list
-      selectedSessionIds.value = new Set()
-      if (session_ids.includes(currentSessionId.value)) {
-        setCurrentSessionId(null)
-      }
-      const nextPage =
-        session_ids.length >= sessions.value.length && page.value > 1
-          ? page.value - 1
-          : page.value
-      await fetchSessions(nextPage)
-      return true
-    } catch (err) {
-      error.value =
-        err instanceof Error ? err.message : 'Failed to delete sessions'
-      return false
-    } finally {
+    error.value = err instanceof Error ? err.message : 'Failed to fetch sessions'
+  } finally {
+    if (token === sessionsRequestToken) {
       isLoading.value = false
-    }
-  }
-
-  const toggleSessionSelection = (sessionId) => {
-    const next = new Set(selectedSessionIds.value)
-    if (next.has(sessionId)) {
-      next.delete(sessionId)
-    } else {
-      next.add(sessionId)
-    }
-    selectedSessionIds.value = next
-  }
-
-  const selectAllSessions = () => {
-    selectedSessionIds.value = new Set(sessions.value.map((s) => s.session_id))
-  }
-
-  const clearSelection = () => {
-    selectedSessionIds.value = new Set()
-  }
-
-  // Fetch sessions when connection status or entity type changes
-  watch(
-    [connectionStatus, selectedEntity],
-    () => {
-      if (connectionStatus.value === 'connected') {
-        fetchSessions(1)
-      } else {
-        resetState()
+      if (sessionsController === controller) {
+        sessionsController = null
       }
-    },
-    { immediate: true }
-  )
+    }
+  }
+}
 
+async function refreshSessions() {
+  await fetchSessions(page.value)
+}
+
+async function deleteSelectedSessions() {
+  if (
+    selectedSessionIds.value.size === 0 ||
+    connectionStatus.value !== $c.ConnStatus.Connected
+  ) {
+    return false
+  }
+
+  isLoading.value = true
+  error.value = null
+
+  try {
+    const selectedSessions = sessions.value.filter((session) =>
+      selectedSessionIds.value.has(session.session_id)
+    )
+    const sessionIds = selectedSessions.map((session) => session.session_id)
+    const sessionTypes = selectedSessions.map((session) => session.session_type)
+
+    const response = await fetch(`${serverUrl.value}/sessions`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        session_ids: sessionIds,
+        session_types: sessionTypes,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete sessions: ${response.status}`)
+    }
+
+    selectedSessionIds.value = new Set()
+    if (sessionIds.includes(currentSessionId.value)) {
+      setCurrentSessionId(null)
+    }
+    const nextPage =
+      sessionIds.length >= sessions.value.length && page.value > 1
+        ? page.value - 1
+        : page.value
+    await fetchSessions(nextPage)
+    return true
+  } catch (err) {
+    error.value =
+      err instanceof Error ? err.message : 'Failed to delete sessions'
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function toggleSessionSelection(sessionId) {
+  const next = new Set(selectedSessionIds.value)
+  if (next.has(sessionId)) {
+    next.delete(sessionId)
+  } else {
+    next.add(sessionId)
+  }
+  selectedSessionIds.value = next
+}
+
+function selectAllSessions() {
+  selectedSessionIds.value = new Set(
+    sessions.value.map((session) => session.session_id)
+  )
+}
+
+function clearSelection() {
+  selectedSessionIds.value = new Set()
+}
+
+events.on(RuntimeEvents.SESSION_CREATED, (session) => {
+  sessions.value = [session, ...sessions.value]
+  setCurrentSessionId(session.session_id)
+  // TODO: handle pages
+})
+
+watch(
+  [connectionStatus, selectedEntity],
+  () => {
+    if (connectionStatus.value === $c.ConnStatus.Connected) {
+      fetchSessions(1)
+    } else {
+      resetState()
+    }
+  },
+  { immediate: true }
+)
+
+export function useSessionManager() {
   return {
     sessions,
     page,

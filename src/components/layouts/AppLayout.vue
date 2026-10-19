@@ -40,7 +40,8 @@
 </template>
 
 <script setup>
-import { ref } from '@vue/composition-api'
+import { getCurrentInstance, ref, watch } from '@vue/composition-api'
+import { applyLocale } from '@/lang'
 
 defineProps({
   title: {
@@ -48,6 +49,9 @@ defineProps({
     default: 'Agno-Vue',
   },
 })
+
+const i18n = getCurrentInstance().proxy.$i18n
+watch(() => i18n.locale, (locale) => applyLocale(locale))
 
 const isAsideCollapsed = ref(false)
 const toggleAside = () => {

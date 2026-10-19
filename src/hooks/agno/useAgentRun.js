@@ -1,38 +1,74 @@
 import { ref, watch } from '@vue/composition-api'
-import { isTeamEvent } from '@/types'
-import { SSEParser } from '@/utils/sse-parser'
-import { useConfig } from '@/hooks/agno/useConfig'
-import { uuid } from '@/utils/index'
-import { tryParseJson } from '@/utils/content-utils'
-import events, { RuntimeEvents } from '@/hooks/agno/events'
 import { $c } from '@/constants'
+import events, { RuntimeEvents } from '@/hooks/agno/events'
+import { mapSessionRunsToMessages } from '@/hooks/agno/historyMapper'
+import {
+  addMemberToolCall,
+  addToolCall,
+  appendMemberContent,
+  appendRunContent,
+  completeMemberRun,
+  completeRun,
+  createMemberRun,
+  createRunFromEvent,
+  getEventError,
+  hasRunOutput,
+  resolveMemberToolCall,
+  resolveToolCall,
+} from '@/hooks/agno/runState'
+import { useConfig } from '@/hooks/agno/useConfig'
+import { isTeamEvent } from '@/types'
+import { uuid } from '@/utils/index'
+import { SSEParser } from '@/utils/sse-parser'
 
 const messages = ref([])
 const currentRun = ref(null)
 const isStreaming = ref(false)
 const isLoadingSession = ref(false)
 const error = ref(null)
+
+const parser = new SSEParser()
+const memberRuns = new Map()
 let activeController = null
 let activeSessionController = null
 let sessionLoadToken = 0
 
-function getEventError(event) {
-  if (typeof event.error === 'string') {
-    return event.error
-  }
-  if (event.error && typeof event.error.message === 'string') {
-    return event.error.message
-  }
-  return event.message || 'Run failed'
+const {
+  serverUrl,
+  connectionStatus,
+  selectedEntity,
+  currentSessionId,
+  setCurrentSessionId,
+} = useConfig()
+
+function getLastUserMessage() {
+  return [...messages.value]
+    .reverse()
+    .find((message) => message.role === $c.Role.User)
 }
 
-function hasRunOutput(run) {
-  return Boolean(
-    run.content ||
-    run.reasoning_content ||
-    run.tool_calls?.length ||
-    run.member_runs?.length
-  )
+function onSessionIdUpdate(runEvent) {
+  const session = {
+    agent_id: runEvent.agent_id,
+    created_at: new Date(runEvent.created_at * 1000).toISOString(),
+    session_id: runEvent.session_id,
+    session_name: getLastUserMessage()?.content || '',
+    session_type: selectedEntity.value?.type,
+  }
+  if (session.session_id !== currentSessionId.value) {
+    setCurrentSessionId(session.session_id)
+    events.emit(RuntimeEvents.SESSION_CREATED, session)
+  }
+}
+
+function updateMemberRunsInCurrentRun() {
+  if (!currentRun.value) {
+    return
+  }
+  currentRun.value = {
+    ...currentRun.value,
+    member_runs: Array.from(memberRuns.values()),
+  }
 }
 
 function finalizeCurrentRun(status, payload = {}) {
@@ -41,23 +77,14 @@ function finalizeCurrentRun(status, payload = {}) {
     return null
   }
 
-  const finalRun = {
-    ...prevRun,
-    content: payload.content ?? prevRun.content,
-    reasoning_content: payload.reasoning_content ?? prevRun.reasoning_content,
-    status,
-    metrics: {
-      ...prevRun.metrics,
-      time_to_first_token:
-        payload.metrics?.time_to_first_token ??
-        prevRun.metrics?.time_to_first_token,
-      duration: payload.metrics?.duration ?? prevRun.metrics?.duration,
-    },
-  }
-
-  if (payload.error) {
-    finalRun.error = payload.error
-  }
+  const finalRun =
+    status === $c.RunStatus.Completed
+      ? completeRun(prevRun, payload)
+      : {
+        ...prevRun,
+        status,
+        ...(payload.error ? { error: payload.error } : {}),
+      }
 
   if (hasRunOutput(finalRun)) {
     messages.value = [
@@ -76,694 +103,346 @@ function finalizeCurrentRun(status, payload = {}) {
   return finalRun
 }
 
-export function useAgentRun() {
-  const { serverUrl, connectionStatus, selectedEntity, currentSessionId, setCurrentSessionId } =
-    useConfig()
-
-  const parser = new SSEParser()
-  const memberRuns = new Map()
-
-  function onSessionIdUpdate(runEvent) {
-    const lastUserMessage = [...messages.value]
-      .reverse()
-      .find((message) => message.role === $c.Role.User)
-    const session = {
-      agent_id: runEvent.agent_id,
-      created_at: new Date(runEvent.created_at * 1000).toISOString(),
-      session_id: runEvent.session_id,
-      session_name: lastUserMessage?.content || '',
-      session_type: selectedEntity.value?.type,
-    }
-    if (session.session_id !== currentSessionId.value) {
-      setCurrentSessionId(session.session_id)
-      events.emit(RuntimeEvents.SESSION_CREATED, session)
-    }
+function handleMemberAgentEvent(event, parentRunId) {
+  switch (event.event) {
+  case $c.RunEvent.RunStarted: {
+    memberRuns.set(event.run_id, createMemberRun(event, parentRunId))
+    updateMemberRunsInCurrentRun()
+    break
   }
 
-  function updateMemberRunsInCurrentRun() {
-    if (!currentRun.value) return
-    currentRun.value = {
-      ...currentRun.value,
-      member_runs: Array.from(memberRuns.values()),
-    }
-  }
-
-  function handleMemberAgentEvent(event, parentRunId) {
-    switch (event.event) {
-    case $c.RunEvent.RunStarted: {
-      const runEvent = event
-      const memberRun = {
-        run_id: runEvent.run_id,
-        agent_id: runEvent.agent_id,
-        agent_name: runEvent.agent_name,
-        reasoning_content: '',
-        content: '',
-        tool_calls: [],
-        status: $c.RunStatus.Streaming,
-        parent_run_id: parentRunId,
-      }
-      memberRuns.set(runEvent.run_id, memberRun)
+  case $c.RunEvent.RunContent: {
+    const memberRun = memberRuns.get(event.run_id)
+    if (memberRun) {
+      memberRuns.set(event.run_id, appendMemberContent(memberRun, event))
       updateMemberRunsInCurrentRun()
-      break
     }
+    break
+  }
 
-    case $c.RunEvent.RunContent: {
-      const contentEvent = event
-      const memberRun = memberRuns.get(contentEvent.run_id)
-      if (memberRun) {
-        memberRun.reasoning_content += contentEvent.reasoning_content || ''
-        memberRun.content += contentEvent.content || ''
-        updateMemberRunsInCurrentRun()
-      }
-      break
+  case $c.RunEvent.ToolCallStarted: {
+    const memberRun = memberRuns.get(event.run_id)
+    if (memberRun) {
+      memberRuns.set(event.run_id, addMemberToolCall(memberRun, event))
+      updateMemberRunsInCurrentRun()
     }
+    break
+  }
 
-    case $c.RunEvent.ToolCallStarted: {
-      const toolEvent = event
-      const memberRun = memberRuns.get(toolEvent.run_id)
-      if (memberRun) {
-        memberRun.tool_calls.push({
-          tool: toolEvent.tool,
-          status: $c.ToolCallStatus.Running,
-        })
-        updateMemberRunsInCurrentRun()
-      }
-      break
+  case $c.RunEvent.ToolCallCompleted: {
+    const memberRun = memberRuns.get(event.run_id)
+    if (memberRun) {
+      memberRuns.set(event.run_id, resolveMemberToolCall(memberRun, event))
+      updateMemberRunsInCurrentRun()
     }
+    break
+  }
 
-    case $c.RunEvent.ToolCallCompleted: {
-      const toolEvent = event
-      const memberRun = memberRuns.get(toolEvent.run_id)
-      if (memberRun) {
-        memberRun.tool_calls = memberRun.tool_calls.map((tc) =>
-          tc.tool.tool_call_id === toolEvent.tool.tool_call_id
-            ? {
-              tool: toolEvent.tool,
-              status: toolEvent.tool.tool_call_error
-                ? $c.ToolCallStatus.Error
-                : $c.ToolCallStatus.Completed,
-            }
-            : tc
-        )
-        updateMemberRunsInCurrentRun()
-      }
-      break
+  case $c.RunEvent.RunCompleted: {
+    const memberRun = memberRuns.get(event.run_id)
+    if (memberRun) {
+      memberRuns.set(event.run_id, completeMemberRun(memberRun, event))
+      updateMemberRunsInCurrentRun()
     }
+    break
+  }
 
-    case $c.RunEvent.RunCompleted: {
-      const completedEvent = event
-      const memberRun = memberRuns.get(completedEvent.run_id)
-      if (memberRun) {
-        memberRun.content = completedEvent.content ?? memberRun.content
-        memberRun.reasoning_content =
-          completedEvent.reasoning_content ?? memberRun.reasoning_content
-        memberRun.status = $c.RunStatus.Completed
-        memberRun.metrics = {
-          time_to_first_token: completedEvent.metrics?.time_to_first_token,
-          duration: completedEvent.metrics?.duration,
-        }
-        updateMemberRunsInCurrentRun()
-      }
-      break
-    }
-
-    case $c.RunEvent.RunError:
-    case $c.RunEvent.RunCancelled: {
-      const memberRun = memberRuns.get(event.run_id)
-      if (memberRun) {
-        const isError = event.event === $c.RunEvent.RunError
-        memberRun.status = isError
+  case $c.RunEvent.RunError:
+  case $c.RunEvent.RunCancelled: {
+    const memberRun = memberRuns.get(event.run_id)
+    if (memberRun) {
+      const isError = event.event === $c.RunEvent.RunError
+      memberRuns.set(event.run_id, {
+        ...memberRun,
+        status: isError
           ? $c.RunStatus.Error
-          : $c.RunStatus.Cancelled
-        if (isError) {
-          memberRun.error = getEventError(event)
-        }
-        updateMemberRunsInCurrentRun()
-      }
-      break
-    }
-    }
-  }
-
-  function handleTeamEvent(event) {
-    switch (event.event) {
-    case $c.RunEvent.TeamRunStarted: {
-      const runEvent = event
-      onSessionIdUpdate(runEvent)
-      const newRun = {
-        run_id: runEvent.run_id,
-        session_id: runEvent.session_id,
-        entity_type: 'team',
-        entity_id: runEvent.team_id,
-        entity_name: runEvent.team_name,
-        reasoning_content: '',
-        content: '',
-        tool_calls: [],
-        member_runs: [],
-        status: $c.RunStatus.Streaming,
-        metrics: {
-          model: runEvent.model,
-          provider: runEvent.model_provider,
-        },
-      }
-      currentRun.value = newRun
-      memberRuns.clear()
-      break
-    }
-
-    case $c.RunEvent.TeamRunContent: {
-      const contentEvent = event
-      if (!currentRun.value) break
-      currentRun.value = {
-        ...currentRun.value,
-        reasoning_content:
-            currentRun.value.reasoning_content +
-            (contentEvent.reasoning_content || ''),
-        content: currentRun.value.content + (contentEvent.content || ''),
-      }
-      break
-    }
-
-    case $c.RunEvent.TeamToolCallStarted: {
-      const toolEvent = event
-      if (!currentRun.value) break
-      currentRun.value = {
-        ...currentRun.value,
-        tool_calls: [
-          ...currentRun.value.tool_calls,
-          { tool: toolEvent.tool, status: 'running' },
-        ],
-      }
-      break
-    }
-
-    case $c.RunEvent.TeamToolCallCompleted: {
-      const toolEvent = event
-      if (!currentRun.value) break
-      currentRun.value = {
-        ...currentRun.value,
-        tool_calls: currentRun.value.tool_calls.map((tc) =>
-          tc.tool.tool_call_id === toolEvent.tool.tool_call_id
-            ? {
-              tool: toolEvent.tool,
-              status: toolEvent.tool.tool_call_error
-                ? $c.ToolCallStatus.Error
-                : $c.ToolCallStatus.Completed,
-            }
-            : tc
-        ),
-      }
-      break
-    }
-
-    case $c.RunEvent.TeamRunCompleted: {
-      const completedEvent = event
-      finalizeCurrentRun($c.RunStatus.Completed, {
-        content: completedEvent.content,
-        reasoning_content: completedEvent.reasoning_content,
-        metrics: completedEvent.metrics,
+          : $c.RunStatus.Cancelled,
+        ...(isError ? { error: getEventError(event) } : {}),
       })
-      break
+      updateMemberRunsInCurrentRun()
     }
+    break
+  }
+  }
+}
 
-    case $c.RunEvent.TeamRunError: {
-      const message = getEventError(event)
-      error.value = message
-      finalizeCurrentRun($c.RunStatus.Error, { error: message })
-      break
-    }
-
-    case $c.RunEvent.TeamRunCancelled: {
-      finalizeCurrentRun($c.RunStatus.Cancelled)
-      break
-    }
-    }
+function handleTeamEvent(event) {
+  switch (event.event) {
+  case $c.RunEvent.TeamRunStarted: {
+    onSessionIdUpdate(event)
+    currentRun.value = createRunFromEvent(event, 'team')
+    memberRuns.clear()
+    break
   }
 
-  function handleAgentRunEvent(event) {
-    const agentEvent = event
-    const parentRunId = agentEvent.parent_run_id
-
-    if (parentRunId && currentRun.value?.run_id === parentRunId) {
-      handleMemberAgentEvent(agentEvent, parentRunId)
-      return
-    }
-
-    switch (event.event) {
-    case $c.RunEvent.RunStarted: {
-      const runEvent = event
-      onSessionIdUpdate(runEvent)
-      const newRun = {
-        run_id: runEvent.run_id,
-        session_id: runEvent.session_id,
-        entity_type: 'agent',
-        entity_id: runEvent.agent_id,
-        entity_name: runEvent.agent_name,
-        reasoning_content: '',
-        content: '',
-        tool_calls: [],
-        member_runs: [],
-        status: $c.RunStatus.Streaming,
-        metrics: {
-          model: runEvent.model,
-          provider: runEvent.model_provider,
-        },
-      }
-      currentRun.value = newRun
-      break
-    }
-
-    case $c.RunEvent.RunContent: {
-      const contentEvent = event
-      if (!currentRun.value) break
-      currentRun.value = {
-        ...currentRun.value,
-        reasoning_content:
-            currentRun.value.reasoning_content +
-            (contentEvent.reasoning_content || ''),
-        content: currentRun.value.content + (contentEvent.content || ''),
-      }
-      break
-    }
-
-    case $c.RunEvent.ToolCallStarted: {
-      const toolEvent = event
-      if (!currentRun.value) break
-      currentRun.value = {
-        ...currentRun.value,
-        tool_calls: [
-          ...currentRun.value.tool_calls,
-          { tool: toolEvent.tool, status: 'running' },
-        ],
-      }
-      break
-    }
-
-    case $c.RunEvent.ToolCallCompleted: {
-      const toolEvent = event
-      if (!currentRun.value) break
-      currentRun.value = {
-        ...currentRun.value,
-        tool_calls: currentRun.value.tool_calls.map((tc) =>
-          tc.tool.tool_call_id === toolEvent.tool.tool_call_id
-            ? {
-              tool: toolEvent.tool,
-              status: toolEvent.tool.tool_call_error
-                ? $c.ToolCallStatus.Error
-                : $c.ToolCallStatus.Completed,
-            }
-            : tc
-        ),
-      }
-      break
-    }
-
-    case $c.RunEvent.RunCompleted: {
-      const completedEvent = event
-      finalizeCurrentRun($c.RunStatus.Completed, {
-        content: completedEvent.content,
-        reasoning_content: completedEvent.reasoning_content,
-        metrics: completedEvent.metrics,
-      })
-      break
-    }
-
-    case $c.RunEvent.RunError: {
-      const message = getEventError(event)
-      error.value = message
-      finalizeCurrentRun($c.RunStatus.Error, { error: message })
-      break
-    }
-
-    case $c.RunEvent.RunCancelled: {
-      finalizeCurrentRun($c.RunStatus.Cancelled)
-      break
-    }
-    }
+  case $c.RunEvent.TeamRunContent: {
+    currentRun.value = appendRunContent(currentRun.value, event)
+    break
   }
 
-  function handleAgentEvent(event) {
-    // TODO: workflow
-    if (isTeamEvent(event)) {
-      handleTeamEvent(event)
-    } else {
-      handleAgentRunEvent(event)
-    }
+  case $c.RunEvent.TeamToolCallStarted: {
+    currentRun.value = addToolCall(currentRun.value, event)
+    break
   }
 
-  async function sendMessage(content) {
-    if (isStreaming.value) return
+  case $c.RunEvent.TeamToolCallCompleted: {
+    currentRun.value = resolveToolCall(currentRun.value, event)
+    break
+  }
 
-    if (!selectedEntity.value) {
-      error.value = 'Please select an agent or team from the sidebar'
-      return
+  case $c.RunEvent.TeamRunCompleted: {
+    finalizeCurrentRun($c.RunStatus.Completed, event)
+    break
+  }
+
+  case $c.RunEvent.TeamRunError: {
+    const message = getEventError(event)
+    error.value = message
+    finalizeCurrentRun($c.RunStatus.Error, { error: message })
+    break
+  }
+
+  case $c.RunEvent.TeamRunCancelled: {
+    finalizeCurrentRun($c.RunStatus.Cancelled)
+    break
+  }
+  }
+}
+
+function handleAgentRunEvent(event) {
+  const parentRunId = event.parent_run_id
+
+  if (parentRunId) {
+    if (currentRun.value?.run_id === parentRunId) {
+      handleMemberAgentEvent(event, parentRunId)
     }
+    return
+  }
 
-    error.value = null
-    const userMessage = {
+  switch (event.event) {
+  case $c.RunEvent.RunStarted: {
+    onSessionIdUpdate(event)
+    currentRun.value = createRunFromEvent(event, 'agent')
+    break
+  }
+
+  case $c.RunEvent.RunContent: {
+    currentRun.value = appendRunContent(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.ToolCallStarted: {
+    currentRun.value = addToolCall(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.ToolCallCompleted: {
+    currentRun.value = resolveToolCall(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.RunCompleted: {
+    finalizeCurrentRun($c.RunStatus.Completed, event)
+    break
+  }
+
+  case $c.RunEvent.RunError: {
+    const message = getEventError(event)
+    error.value = message
+    finalizeCurrentRun($c.RunStatus.Error, { error: message })
+    break
+  }
+
+  case $c.RunEvent.RunCancelled: {
+    finalizeCurrentRun($c.RunStatus.Cancelled)
+    break
+  }
+  }
+}
+
+function handleAgentEvent(event) {
+  // TODO: workflow
+  if (isTeamEvent(event)) {
+    handleTeamEvent(event)
+  } else {
+    handleAgentRunEvent(event)
+  }
+}
+
+async function sendMessage(content) {
+  if (isStreaming.value) {
+    return
+  }
+
+  if (!selectedEntity.value) {
+    error.value = 'Please select an agent or team from the sidebar'
+    return
+  }
+
+  error.value = null
+  messages.value = [
+    ...messages.value,
+    {
       id: uuid(),
-      role: 'user',
+      role: $c.Role.User,
       content,
       timestamp: Date.now(),
+    },
+  ]
+  currentRun.value = null
+  isStreaming.value = true
+  parser.reset()
+  memberRuns.clear()
+
+  const controller = new AbortController()
+  activeController = controller
+
+  try {
+    const formData = new URLSearchParams()
+    formData.append('message', content)
+    formData.append('stream', 'true')
+    if (currentSessionId.value) {
+      formData.append('session_id', currentSessionId.value)
     }
 
-    messages.value = [...messages.value, userMessage]
-    currentRun.value = null
-    isStreaming.value = true
-    parser.reset()
-    memberRuns.clear()
-
-    const controller = new AbortController()
-    activeController = controller
-
-    try {
-      // TODO: background
-      const formData = new URLSearchParams()
-      formData.append('message', content)
-      formData.append('stream', 'true')
-      if (currentSessionId.value) {
-        formData.append('session_id', currentSessionId.value)
+    const endpoint = selectedEntity.value.type === 'team' ? 'teams' : 'agents'
+    const response = await fetch(
+      `${serverUrl.value}/${endpoint}/${selectedEntity.value.id}/runs`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+        signal: controller.signal,
       }
+    )
 
-      const endpoint =
-        selectedEntity.value.type === 'team' ? 'teams' : 'agents'
-      const response = await fetch(
-        `${serverUrl.value}/${endpoint}/${selectedEntity.value.id}/runs`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: formData.toString(),
-          signal: controller.signal,
-        }
-      )
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No response body')
+    }
+
+    const decoder = new TextDecoder()
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
       }
+      parser.parse(decoder.decode(value, { stream: true }), handleAgentEvent)
+    }
 
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No response body')
+    parser.flush(handleAgentEvent)
+  } catch (err) {
+    if (activeController !== controller || err?.name === 'AbortError') {
+      return
+    }
+    error.value = err instanceof Error ? err.message : 'Unknown error'
+  } finally {
+    if (activeController === controller) {
+      if (currentRun.value?.status === $c.RunStatus.Streaming) {
+        finalizeCurrentRun(
+          controller.signal.aborted
+            ? $c.RunStatus.Cancelled
+            : $c.RunStatus.Error,
+          controller.signal.aborted
+            ? {}
+            : { error: error.value || 'Stream ended unexpectedly' }
+        )
       }
-
-      const decoder = new TextDecoder()
-
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value, { stream: true })
-        parser.parse(chunk, handleAgentEvent)
-      }
-
-      parser.flush(handleAgentEvent)
-    } catch (err) {
-      if (activeController !== controller || err?.name === 'AbortError') {
-        return
-      }
-      error.value = err instanceof Error ? err.message : 'Unknown error'
-    } finally {
-      if (activeController === controller) {
-        if (currentRun.value?.status === $c.RunStatus.Streaming) {
-          finalizeCurrentRun(
-            controller.signal.aborted
-              ? $c.RunStatus.Cancelled
-              : $c.RunStatus.Error,
-            controller.signal.aborted
-              ? {}
-              : { error: error.value || 'Stream ended unexpectedly' }
-          )
-        }
-        activeController = null
-        isStreaming.value = false
-      }
+      activeController = null
+      isStreaming.value = false
     }
   }
+}
 
-  function cancelRun() {
-    activeController?.abort()
+function cancelRun() {
+  activeController?.abort()
+}
+
+function cancelSessionLoad() {
+  sessionLoadToken += 1
+  if (activeSessionController) {
+    activeSessionController.abort()
+    activeSessionController = null
+  }
+}
+
+function clearMessages() {
+  cancelRun()
+  cancelSessionLoad()
+  messages.value = []
+  currentRun.value = null
+  error.value = null
+  memberRuns.clear()
+}
+
+async function loadSession(targetSessionId) {
+  if (!serverUrl.value) {
+    error.value = 'Server URL not configured'
+    return
   }
 
-  function cancelSessionLoad() {
-    sessionLoadToken += 1
-    if (activeSessionController) {
-      activeSessionController.abort()
+  cancelRun()
+  cancelSessionLoad()
+  const token = ++sessionLoadToken
+  const controller = new AbortController()
+  activeSessionController = controller
+
+  isLoadingSession.value = true
+  error.value = null
+  messages.value = []
+  currentRun.value = null
+  parser.reset()
+  memberRuns.clear()
+
+  try {
+    const response = await fetch(
+      `${serverUrl.value}/sessions/${targetSessionId}/runs`,
+      { signal: controller.signal }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Failed to load session: ${response.status}`)
+    }
+
+    const runs = await response.json()
+
+    if (token !== sessionLoadToken) {
+      return
+    }
+
+    messages.value = mapSessionRunsToMessages(runs, targetSessionId)
+  } catch (err) {
+    if (token !== sessionLoadToken || err?.name === 'AbortError') {
+      return
+    }
+    error.value = err instanceof Error ? err.message : 'Failed to load session'
+  } finally {
+    if (token === sessionLoadToken) {
+      isLoadingSession.value = false
       activeSessionController = null
     }
   }
+}
 
-  function clearMessages() {
-    cancelRun()
-    cancelSessionLoad()
-    messages.value = []
-    currentRun.value = null
-    error.value = null
-    memberRuns.clear()
-  }
-
-  watch(currentSessionId, (next) => {
-    if (!next) {
-      clearMessages()
-    }
-  })
-
-  watch([connectionStatus, selectedEntity], () => {
+watch(currentSessionId, (next) => {
+  if (!next) {
     clearMessages()
-  })
-
-  // TODO: resume
-  // TODO: move to useSessionManager
-  async function loadSession(targetSessionId) {
-    if (!serverUrl.value) {
-      error.value = 'Server URL not configured'
-      return
-    }
-
-    cancelRun()
-    cancelSessionLoad()
-    const token = ++sessionLoadToken
-    const controller = new AbortController()
-    activeSessionController = controller
-
-    isLoadingSession.value = true
-    error.value = null
-    messages.value = []
-    currentRun.value = null
-    parser.reset()
-    memberRuns.clear()
-
-    try {
-      const response = await fetch(
-        `${serverUrl.value}/sessions/${targetSessionId}/runs`,
-        { signal: controller.signal }
-      )
-
-      if (!response.ok) {
-        throw new Error(`Failed to load session: ${response.status}`)
-      }
-
-      const runs = await response.json()
-
-      if (token !== sessionLoadToken) {
-        return
-      }
-
-      const topLevelRuns = runs.filter((r) => !r.parent_run_id)
-      const childRuns = runs.filter((r) => r.parent_run_id)
-
-      const memberRunsByParent = new Map()
-      childRuns.forEach((run) => {
-        const parentId = run.parent_run_id
-        if (!memberRunsByParent.has(parentId)) {
-          memberRunsByParent.set(parentId, [])
-        }
-        memberRunsByParent.get(parentId).push(run)
-      })
-
-      const loadedMessages = []
-
-      topLevelRuns.forEach((run) => {
-        const hasMemberRuns = memberRunsByParent.has(run.run_id)
-        const entityType = hasMemberRuns ? 'team' : 'agent'
-
-        const assistantMessage = run.messages?.find(
-          (m) =>
-            m.role === $c.Role.Assistant && m.tool_calls && m.tool_calls.length > 0
-        )
-
-        let toolCalls = []
-        if (run.tools && run.tools.length > 0) {
-          toolCalls = run.tools.map((tool) => ({
-            tool: {
-              tool_call_id: tool.tool_call_id,
-              tool_name: tool.tool_name,
-              tool_args: tool.tool_args,
-              tool_call_error: tool.tool_call_error,
-              result: tool.result,
-              metrics: tool.metrics,
-              child_run_id: tool.child_run_id,
-              stop_after_tool_call: tool.stop_after_tool_call,
-              created_at: tool.created_at,
-              requires_confirmation: null,
-              confirmed: null,
-              confirmation_note: null,
-              requires_user_input: null,
-              user_input_schema: null,
-              user_feedback_schema: null,
-              answered: null,
-              external_execution_required: null,
-              external_execution_silent: null,
-              approval_type: null,
-              approval_id: null,
-            },
-            status: tool.tool_call_error ? $c.ToolCallStatus.Error : $c.ToolCallStatus.Completed,
-          }))
-        } else if (assistantMessage?.tool_calls) {
-          toolCalls = assistantMessage.tool_calls.map((tc) => ({
-            tool: {
-              tool_call_id: tc.id,
-              tool_name: tc.function.name,
-              tool_args:
-                tryParseJson(tc.function.arguments) ?? tc.function.arguments,
-              tool_call_error: false,
-              result: null,
-              metrics: null,
-              child_run_id: null,
-              stop_after_tool_call: false,
-              created_at: assistantMessage.created_at,
-              requires_confirmation: null,
-              confirmed: null,
-              confirmation_note: null,
-              requires_user_input: null,
-              user_input_schema: null,
-              user_feedback_schema: null,
-              answered: null,
-              external_execution_required: null,
-              external_execution_silent: null,
-              approval_type: null,
-              approval_id: null,
-            },
-            status: $c.ToolCallStatus.Completed,
-          }))
-        }
-
-        const memberRunsForThisRun = []
-        if (hasMemberRuns) {
-          const children = memberRunsByParent.get(run.run_id) || []
-          children.forEach((childRun) => {
-            const memberToolCalls = []
-            if (childRun.tools && childRun.tools.length > 0) {
-              childRun.tools.forEach((tool) => {
-                memberToolCalls.push({
-                  tool: {
-                    tool_call_id: tool.tool_call_id,
-                    tool_name: tool.tool_name,
-                    tool_args: tool.tool_args,
-                    tool_call_error: tool.tool_call_error,
-                    result: tool.result,
-                    metrics: tool.metrics,
-                    child_run_id: tool.child_run_id,
-                    stop_after_tool_call: tool.stop_after_tool_call,
-                    created_at: tool.created_at,
-                    requires_confirmation: null,
-                    confirmed: null,
-                    confirmation_note: null,
-                    requires_user_input: null,
-                    user_input_schema: null,
-                    user_feedback_schema: null,
-                    answered: null,
-                    external_execution_required: null,
-                    external_execution_silent: null,
-                    approval_type: null,
-                    approval_id: null,
-                  },
-                  status: tool.tool_call_error ? $c.ToolCallStatus.Error : $c.ToolCallStatus.Completed,
-                })
-              })
-            }
-
-            memberRunsForThisRun.push({
-              run_id: childRun.run_id,
-              agent_id: childRun.agent_id,
-              agent_name: childRun.agent_name || childRun.agent_id,
-              reasoning_content: childRun.reasoning_content || '',
-              content: childRun.content || '',
-              tool_calls: memberToolCalls,
-              status: $c.RunStatus.Completed,
-              parent_run_id: run.run_id,
-              metrics: {
-                time_to_first_token: childRun.metrics?.time_to_first_token,
-                duration: childRun.metrics?.duration,
-                model: childRun.metrics?.details?.model?.[0]?.id,
-                provider: childRun.metrics?.details?.model?.[0]?.provider,
-              },
-            })
-          })
-        }
-
-        if (run.run_input) {
-          const msgTime = run.messages?.[0]?.created_at || Date.now() / 1000
-          loadedMessages.push({
-            id: uuid(),
-            role: 'user',
-            content: run.run_input,
-            timestamp: msgTime * 1000,
-          })
-        }
-
-        if (run.content || run.reasoning_content) {
-          const msgTime =
-            run.messages?.[run.messages.length - 1]?.created_at ||
-            Date.now() / 1000
-          loadedMessages.push({
-            id: uuid(),
-            role: $c.Role.Assistant,
-            content: run.content || '',
-            timestamp: msgTime * 1000,
-            streamMessage: {
-              run_id: run.run_id,
-              session_id: targetSessionId,
-              entity_type: entityType,
-              entity_id: run.agent_id,
-              entity_name: run.agent_name || run.agent_id,
-              reasoning_content: run.reasoning_content || '',
-              content: run.content || '',
-              tool_calls: toolCalls,
-              member_runs: memberRunsForThisRun,
-              status: $c.RunStatus.Completed,
-              metrics: {
-                time_to_first_token: run.metrics?.time_to_first_token,
-                duration: run.metrics?.duration,
-                model: run.metrics?.details?.model?.[0]?.id,
-                provider: run.metrics?.details?.model?.[0]?.provider,
-              },
-            },
-          })
-        }
-      })
-
-      if (token !== sessionLoadToken) {
-        return
-      }
-
-      messages.value = loadedMessages
-    } catch (err) {
-      if (token !== sessionLoadToken || err?.name === 'AbortError') {
-        return
-      }
-      error.value =
-        err instanceof Error ? err.message : 'Failed to load session'
-    } finally {
-      if (token === sessionLoadToken) {
-        isLoadingSession.value = false
-        activeSessionController = null
-      }
-    }
   }
+})
 
+watch([connectionStatus, selectedEntity], () => {
+  clearMessages()
+})
+
+export function useAgentRun() {
   return {
     messages,
     currentRun,

@@ -1,10 +1,11 @@
 import { computed, ref } from '@vue/composition-api'
 import { $c } from '@/constants'
+import { readStorage, writeStorage } from '@/utils/storage'
 
 const DEFAULT_SERVER_URL = `${window.location.protocol}//${window.location.host}/agno`
 
-const serverUrl = ref(DEFAULT_SERVER_URL)
-const selectedEntity = ref(null)
+const serverUrl = ref(readStorage('serverUrl', DEFAULT_SERVER_URL))
+const selectedEntity = ref(readStorage('entity', null))
 const selectedEntityType = computed(() => selectedEntity.value?.type)
 const currentSessionId = ref(null)
 const connectionStatus = ref($c.ConnStatus.Disconnected)
@@ -15,7 +16,12 @@ const refreshing = ref(false)
 
 export function useConfig() {
   const setServerUrl = (url) => {
-    serverUrl.value = url
+    const next = String(url || '').trim()
+    if (!next) {
+      return
+    }
+    serverUrl.value = next
+    writeStorage('serverUrl', next)
   }
 
   const setCurrentSessionId = (id) => {
@@ -61,13 +67,22 @@ export function useConfig() {
 
       agents.value = agentsData
       teams.value = teamsData
-      connectionStatus.value = $c.ConnStatus.Connected
+      writeStorage('serverUrl', serverUrl.value)
 
-      if (agents.value.length > 0) {
+      const savedEntity = selectedEntity.value
+      const savedList =
+        savedEntity?.type === 'team' ? teams.value : agents.value
+      const savedMatch = savedList.find((entity) => entity.id === savedEntity?.id)
+
+      if (savedMatch) {
+        selectEntity(savedEntity.type, savedMatch.id, savedMatch.name)
+      } else if (agents.value.length > 0) {
         selectDefaultAgent()
       } else if (teams.value.length > 0) {
         selectDefaultTeam()
       }
+
+      connectionStatus.value = $c.ConnStatus.Connected
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect to server'
       error.value = errorMessage
@@ -112,6 +127,7 @@ export function useConfig() {
   const selectEntity = (type, id, name) => {
     const newEntity = { type, id, name }
     selectedEntity.value = newEntity
+    writeStorage('entity', newEntity)
     // Clear session ID when switching entities (treat as New Chat)
     setCurrentSessionId(null)
   }

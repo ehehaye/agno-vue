@@ -16,6 +16,8 @@ dist.zip
 # Editor directories and files
 .vscode/*
 .github/*
+!.github/workflows/
+!.github/workflows/**
 !.vscode/extensions.json
 .idea
 .DS_Store
