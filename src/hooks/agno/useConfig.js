@@ -15,9 +15,20 @@ const connectionStatus = ref($c.ConnStatus.Disconnected)
 const isVerified = ref(false)
 const agents = ref([])
 const teams = ref([])
+const workflows = ref([])
 const error = ref(null)
 const refreshing = ref(false)
 let connectPromise = null
+
+function entityList(type) {
+  if (type === 'team') {
+    return teams.value
+  }
+  if (type === 'workflow') {
+    return workflows.value
+  }
+  return agents.value
+}
 
 export function useConfig() {
   const setServerUrl = (url) => {
@@ -45,6 +56,7 @@ export function useConfig() {
     isVerified.value = false
     agents.value = []
     teams.value = []
+    workflows.value = []
     error.value = null
     // Clear session ID on disconnect since we can't load it without connection
     setCurrentSessionId(null)
@@ -62,15 +74,17 @@ export function useConfig() {
     error.value = null
     agents.value = []
     teams.value = []
+    workflows.value = []
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), CONNECT_TIMEOUT)
 
     try {
-      // Fetch agents and teams in parallel
-      const [agentsResponse, teamsResponse] = await Promise.all([
+      // Fetch agents, teams and workflows in parallel
+      const [agentsResponse, teamsResponse, workflowsResponse] = await Promise.all([
         fetch(`${serverUrl.value}/agents`, { signal: controller.signal }),
         fetch(`${serverUrl.value}/teams`, { signal: controller.signal }),
+        fetch(`${serverUrl.value}/workflows`, { signal: controller.signal }),
       ])
 
       if (!agentsResponse.ok) {
@@ -79,22 +93,31 @@ export function useConfig() {
       if (!teamsResponse.ok) {
         throw new Error(`Failed to fetch teams: ${teamsResponse.status}`)
       }
+      if (!workflowsResponse.ok) {
+        throw new Error(`Failed to fetch workflows: ${workflowsResponse.status}`)
+      }
 
       const agentsData = await agentsResponse.json()
       const teamsData = await teamsResponse.json()
+      const workflowsData = await workflowsResponse.json()
 
-      if (!Array.isArray(agentsData) || !Array.isArray(teamsData)) {
+      if (
+        !Array.isArray(agentsData) ||
+        !Array.isArray(teamsData) ||
+        !Array.isArray(workflowsData)
+      ) {
         throw new Error('Unexpected response from server')
       }
 
       agents.value = agentsData
       teams.value = teamsData
+      workflows.value = workflowsData
       writeStorage('serverUrl', serverUrl.value)
 
       const savedEntity = selectedEntity.value
-      const savedList =
-        savedEntity?.type === 'team' ? teams.value : agents.value
-      const savedMatch = savedList.find((entity) => entity.id === savedEntity?.id)
+      const savedMatch = entityList(savedEntity?.type).find(
+        (entity) => entity.id === savedEntity?.id
+      )
 
       if (savedMatch) {
         selectEntity(savedEntity.type, savedMatch.id, savedMatch.name)
@@ -102,6 +125,8 @@ export function useConfig() {
         selectDefaultAgent()
       } else if (teams.value.length > 0) {
         selectDefaultTeam()
+      } else if (workflows.value.length > 0) {
+        selectDefaultWorkflow()
       } else {
         selectedEntity.value = null
       }
@@ -149,9 +174,10 @@ export function useConfig() {
     error.value = null
 
     try {
-      const [agentsResponse, teamsResponse] = await Promise.all([
+      const [agentsResponse, teamsResponse, workflowsResponse] = await Promise.all([
         fetch(`${serverUrl.value}/agents`),
         fetch(`${serverUrl.value}/teams`),
+        fetch(`${serverUrl.value}/workflows`),
       ])
 
       if (!agentsResponse.ok) {
@@ -160,12 +186,17 @@ export function useConfig() {
       if (!teamsResponse.ok) {
         throw new Error(`Failed to fetch teams: ${teamsResponse.status}`)
       }
+      if (!workflowsResponse.ok) {
+        throw new Error(`Failed to fetch workflows: ${workflowsResponse.status}`)
+      }
 
       const agentsData = await agentsResponse.json()
       const teamsData = await teamsResponse.json()
+      const workflowsData = await workflowsResponse.json()
 
       agents.value = agentsData
       teams.value = teamsData
+      workflows.value = workflowsData
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to refresh'
       error.value = errorMessage
@@ -190,6 +221,10 @@ export function useConfig() {
     selectEntity('team', id, name)
   }
 
+  const selectWorkflow = (id, name) => {
+    selectEntity('workflow', id, name)
+  }
+
   const selectDefaultAgent = () => {
     if (agents.value.length > 0) {
       selectAgent(agents.value[0].id, agents.value[0].name)
@@ -202,6 +237,12 @@ export function useConfig() {
     }
   }
 
+  const selectDefaultWorkflow = () => {
+    if (workflows.value.length > 0) {
+      selectWorkflow(workflows.value[0].id, workflows.value[0].name)
+    }
+  }
+
   return {
     serverUrl,
     defaultServerUrl,
@@ -211,6 +252,7 @@ export function useConfig() {
     ensureConnected,
     agents,
     teams,
+    workflows,
     selectedEntity,
     selectedEntityType,
     currentSessionId,
@@ -221,8 +263,10 @@ export function useConfig() {
     selectEntity,
     selectAgent,
     selectTeam,
+    selectWorkflow,
     selectDefaultAgent,
     selectDefaultTeam,
+    selectDefaultWorkflow,
     setCurrentSessionId,
     error,
   }

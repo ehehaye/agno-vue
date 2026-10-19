@@ -82,9 +82,166 @@ function toTimestamp(seconds) {
   return typeof seconds === 'number' ? seconds * 1000 : Date.now()
 }
 
+const WORKFLOW_STEP_STATUS = {
+  completed: $c.StepStatus.Completed,
+  paused: $c.StepStatus.Paused,
+  error: $c.StepStatus.Error,
+  cancelled: $c.StepStatus.Cancelled,
+  running: $c.StepStatus.Running,
+}
+
+function mapWorkflowStatus(status) {
+  switch (String(status || '').toLowerCase()) {
+  case 'paused':
+    return $c.RunStatus.Paused
+  case 'completed':
+    return $c.RunStatus.Completed
+  case 'error':
+    return $c.RunStatus.Error
+  case 'cancelled':
+    return $c.RunStatus.Cancelled
+  default:
+    return $c.RunStatus.Streaming
+  }
+}
+
+function flattenWorkflowSteps(steps, parentStepId = null, depth = 0) {
+  return (steps || []).flatMap((step) => {
+    const status = WORKFLOW_STEP_STATUS[String(step.status || '').toLowerCase()]
+      || $c.StepStatus.Completed
+    const mapped = {
+      id: step.step_id,
+      name: step.step_name || step.step_id,
+      index: step.step_index,
+      parent_step_id: parentStepId,
+      depth,
+      type: step.step_type || 'Step',
+      status,
+      content: step.content || '',
+      reasoning_content: step.reasoning_content || '',
+      tool_calls: [],
+      executor_name: step.executor_name || null,
+      metrics: step.metrics || null,
+    }
+    return [
+      mapped,
+      ...flattenWorkflowSteps(step.steps, step.step_id, depth + 1),
+    ]
+  })
+}
+
+function pickActiveRequirement(requirements) {
+  if (!Array.isArray(requirements) || requirements.length === 0) {
+    return null
+  }
+  const requirement = requirements[requirements.length - 1]
+  return {
+    step_id: requirement.step_id,
+    step_name: requirement.step_name,
+    step_index: requirement.step_index,
+    step_type: requirement.step_type || 'Step',
+    requires_confirmation: Boolean(requirement.requires_confirmation),
+    confirmation_message: requirement.confirmation_message,
+    requires_user_input: Boolean(requirement.requires_user_input),
+    user_input_message: requirement.user_input_message,
+    user_input_schema: requirement.user_input_schema,
+    requires_route_selection: Boolean(requirement.requires_route_selection),
+    available_choices: requirement.available_choices,
+    allow_multiple_selections: Boolean(requirement.allow_multiple_selections),
+    requires_output_review: Boolean(requirement.requires_output_review),
+    output_review_message: requirement.output_review_message,
+    requires_executor_input: Boolean(requirement.requires_executor_input),
+    executor_name: requirement.executor_name,
+    on_reject: requirement.on_reject || 'cancel',
+  }
+}
+
+function mapWorkflowRunToMessages(run, sessionId) {
+  const status = mapWorkflowStatus(run.status)
+  const pausedRequirement = status === $c.RunStatus.Paused
+    ? pickActiveRequirement(run.step_requirements)
+    : null
+  let steps = flattenWorkflowSteps(run.step_results)
+
+  if (
+    pausedRequirement?.step_id &&
+    !steps.some((step) => step.id === pausedRequirement.step_id)
+  ) {
+    steps = [
+      ...steps,
+      {
+        id: pausedRequirement.step_id,
+        name: pausedRequirement.step_name || pausedRequirement.step_id,
+        index: pausedRequirement.step_index,
+        parent_step_id: null,
+        depth: 0,
+        type: pausedRequirement.step_type || 'Step',
+        status: $c.StepStatus.Paused,
+        content: '',
+        reasoning_content: '',
+        tool_calls: [],
+        executor_name: pausedRequirement.executor_name || null,
+        metrics: null,
+      },
+    ]
+  }
+
+  const messages = []
+
+  if (run.run_input) {
+    messages.push({
+      id: uuid(),
+      role: $c.Role.User,
+      content: run.run_input,
+      timestamp: toTimestamp(run.created_at),
+    })
+  }
+
+  if (!run.content && steps.length === 0) {
+    return messages
+  }
+
+  messages.push({
+    id: uuid(),
+    role: $c.Role.Assistant,
+    content: run.content || '',
+    timestamp: toTimestamp(run.created_at),
+    streamMessage: {
+      run_id: run.run_id,
+      session_id: sessionId,
+      entity_type: 'workflow',
+      entity_id: run.workflow_id,
+      entity_name: run.workflow_name || run.workflow_id,
+      reasoning_content: run.reasoning_content || '',
+      content: run.content || '',
+      tool_calls: [],
+      member_runs: [],
+      steps,
+      status,
+      pausedRequirement,
+      metrics: {
+        duration: run.metrics?.duration,
+      },
+    },
+  })
+
+  return messages
+}
+
+export function mapWorkflowRunsToMessages(runs, sessionId) {
+  if (!Array.isArray(runs)) {
+    return []
+  }
+  return runs.flatMap((run) => mapWorkflowRunToMessages(run, sessionId))
+}
+
 export function mapSessionRunsToMessages(runs, sessionId) {
   if (!Array.isArray(runs)) {
     return []
+  }
+
+  if (runs.some((run) => run.workflow_id)) {
+    return mapWorkflowRunsToMessages(runs, sessionId)
   }
 
   const topLevelRuns = runs.filter((run) => !run.parent_run_id)

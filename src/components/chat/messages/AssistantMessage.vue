@@ -28,6 +28,16 @@
       />
     </template>
 
+    <!-- workflow step blocks -->
+    <template v-if="message.steps && message.steps.length > 0">
+      <WorkflowStepsBlock :steps="message.steps" />
+    </template>
+
+    <!-- workflow pause block -->
+    <template v-if="message.status === $c.RunStatus.Paused">
+      <WorkflowPauseBlock :run="message" />
+    </template>
+
     <!-- content block -->
     <template v-if="message.content">
       <MarkdownRenderer :content="message.content" />
@@ -65,6 +75,8 @@ import {
   MemberRunBlock,
   ReasoningBlock,
   ToolCallBlock,
+  WorkflowPauseBlock,
+  WorkflowStepsBlock,
 } from '@/components/chat/messages/blocks'
 
 export default defineComponent({
@@ -76,6 +88,8 @@ export default defineComponent({
     DurationBlock,
     MemberRunBlock,
     ToolCallBlock,
+    WorkflowPauseBlock,
+    WorkflowStepsBlock,
   },
   provide() {
     return {
@@ -91,6 +105,7 @@ export default defineComponent({
         content: '',
         reasoning_content: '',
         member_runs: [],
+        steps: [],
       }),
     },
   },
