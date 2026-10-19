@@ -2,11 +2,11 @@
   <div class="app">
     <div
       v-if="isBootstrapping"
-      class="flex h-full items-center justify-center"
+      class="tw:flex tw:h-full tw:items-center tw:justify-center"
     >
-      <div class="flex flex-col items-center gap-md rounded-xl border border-line bg-surface px-xl py-xl text-center">
+      <div class="tw:flex tw:flex-col tw:items-center tw:gap-base tw:rounded-xl tw:border tw:border-line tw:bg-surface tw:px-wide tw:py-wide tw:text-center">
         <StreamingIndicator />
-        <p class="text-sm text-ink-muted">{{ $t('app.initializing') }}</p>
+        <p class="tw:text-sm tw:text-ink-muted">{{ $t('app.initializing') }}</p>
       </div>
     </div>
     <router-view v-else />

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { createVuePlugin } from 'vite-plugin-vue2'
 import ScriptSetup from 'unplugin-vue2-script-setup/vite'
+import tailwindcss from '@tailwindcss/vite'
 import { URL, fileURLToPath } from 'node:url'
 import { codeInspectorPlugin } from 'code-inspector-plugin'
 
@@ -8,6 +9,7 @@ export default defineConfig({
   plugins: [
     createVuePlugin(),
     ScriptSetup(),
+    tailwindcss(),
     codeInspectorPlugin({
       bundler: 'vite',
     }),

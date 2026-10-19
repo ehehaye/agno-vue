@@ -17,10 +17,10 @@ pnpm i          # install (pnpm, lockfile is pnpm-lock.yaml)
 pnpm dev        # Vite dev server on :5173, opens browser
 pnpm build      # vite build -> dist/ (gitignored)
 pnpm preview    # serve the built dist/
-pnpm lint       # eslint . --ext .vue,.js,... --fix  (NOTE: mutates files)
+pnpm lint       # eslint . --fix  (NOTE: mutates files)
 pnpm lint:check # eslint without --fix (CI-friendly)
 pnpm test       # node:test unit tests
-npx eslint src --ext .vue,.js               # read-only lint check
+npx eslint src                              # read-only lint check
 ```
 
 ## Architecture
@@ -40,8 +40,8 @@ npx eslint src --ext .vue,.js               # read-only lint check
 - API shape: `RunEvent` values are CamelCase strings from the Agno stream (`RunContent`, `TeamToolCallStarted`, …). Team events are detected by the `Team` prefix (`src/types/index.js`), not by identity.
 - Update runs immutably (`currentRun.value = { ...prev, ... }`, `messages.value = [...messages.value, msg]`).
 - Two component styles coexist: `<script setup>` (enabled by `unplugin-vue2-script-setup`) for newer components, and `export default defineComponent({ ... })` from `@vue/composition-api` for older/stateful ones. Match the surrounding file.
-- ESLint: **no semicolons**, 2-space indent, single quotes, object-curly-spacing `always`, sorted import members. `.prettierrc` says `semi: true` but ESLint is authoritative — write no semicolons.
-- Styles: Less + Tailwind. `variables.less` and `mixins.less` are auto-injected into every Less block by `vite.config.js`, so use `@spacing-md`, `@border-color`, etc. without importing. Tailwind is wired through `postcss.config.cjs` + `tailwind.config.cjs`; its design tokens mirror `variables.less` (keep both in sync). Prefer `<style lang="less" scoped>` for component-specific styles and Tailwind utilities for new layout/spacing work.
+- ESLint: **no semicolons**, 2-space indent, single quotes, object-curly-spacing `always`, sorted import members. Config is ESLint 10 flat config (`eslint.config.js`). `.prettierrc` also uses `semi: false` — ESLint is authoritative.
+- Styles: Less + Tailwind CSS 4. `variables.less` and `mixins.less` are auto-injected into every Less block by `vite.config.js`, so use `@spacing-md`, `@border-color`, etc. without importing. Tailwind runs through `@tailwindcss/vite`; tokens live in `@theme` in `src/assets/styles/tailwind.css` and mirror `variables.less` (keep both in sync). Tailwind utilities use the **`tw:` prefix** (e.g. `tw:flex`, `tw:hover:underline`); custom spacing tokens are `tight/compact/base/loose/wide`. Prefer `<style lang="less" scoped>` for component-specific styles and `tw:` utilities for new layout/spacing work.
 - Use `@/` alias for `src` imports; import icons/components through their folder `index.js` barrels.
 - User-facing strings go through `$t()` with keys in `src/lang/{en,zh}.js`.
 

@@ -35,13 +35,13 @@
 
     <div
       v-if="runError"
-      class="mx-auto mb-sm flex w-content items-center justify-between gap-sm rounded-md border border-danger bg-surface-muted px-md py-sm text-sm text-danger"
+      class="tw:mx-auto tw:mb-compact tw:flex tw:w-[70%] tw:items-center tw:justify-between tw:gap-compact tw:rounded-md tw:border tw:border-danger tw:bg-surface-muted tw:px-base tw:py-compact tw:text-sm tw:text-danger"
       role="alert"
     >
-      <span class="min-w-0 flex-1 break-words">{{ runError }}</span>
+      <span class="tw:min-w-0 tw:flex-1 tw:break-words">{{ runError }}</span>
       <button
         type="button"
-        class="flex-shrink-0 cursor-pointer border-0 bg-transparent px-sm text-lg leading-none text-danger"
+        class="tw:shrink-0 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:px-compact tw:text-lg tw:leading-none tw:text-danger"
         :aria-label="$t('chat.dismiss')"
         @click="dismissError"
       >

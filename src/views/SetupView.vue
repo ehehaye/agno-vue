@@ -1,23 +1,23 @@
 <template>
-  <div class="flex h-full items-center justify-center px-md">
-    <div class="w-full max-w-md rounded-xl border border-line bg-surface p-xl">
-      <h1 class="text-2xl font-semibold text-ink">
+  <div class="tw:flex tw:h-full tw:items-center tw:justify-center tw:px-base">
+    <div class="tw:w-full tw:max-w-md tw:rounded-xl tw:border tw:border-line tw:bg-surface tw:p-wide">
+      <h1 class="tw:text-2xl tw:font-semibold tw:text-ink">
         {{ $t('setup.title') }}
       </h1>
-      <p class="mt-sm text-sm text-ink-muted">
+      <p class="tw:mt-compact tw:text-sm tw:text-ink-muted">
         {{ $t('setup.description') }}
       </p>
 
       <label
         for="server-url"
-        class="mt-lg block text-sm font-medium text-ink"
+        class="tw:mt-loose tw:block tw:text-sm tw:font-medium tw:text-ink"
       >
         {{ $t('setup.serverUrl') }}
       </label>
       <input
         id="server-url"
         v-model="draft"
-        class="ai-input mt-xs w-full rounded-md border border-line bg-surface px-md py-sm text-ink focus:border-brand focus:outline-none"
+        class="ai-input tw:mt-tight tw:w-full tw:rounded-md tw:border tw:border-line tw:bg-surface tw:px-base tw:py-compact tw:text-ink tw:focus:border-brand tw:focus:outline-none"
         :placeholder="defaultServerUrl"
         :disabled="testing"
         @input="clearError"
@@ -26,8 +26,8 @@
 
       <p
         v-if="message"
-        class="mt-sm break-words text-sm"
-        :class="hasError ? 'text-danger' : 'text-success'"
+        class="tw:mt-compact tw:break-words tw:text-sm"
+        :class="hasError ? 'tw:text-danger' : 'tw:text-success'"
         role="status"
       >
         {{ message }}
@@ -35,7 +35,7 @@
 
       <button
         type="button"
-        class="ai-button mt-lg w-full"
+        class="ai-button tw:mt-loose tw:w-full"
         :disabled="testing || !draft.trim()"
         @click="submit"
       >
@@ -45,7 +45,7 @@
       <router-link
         v-if="canEnter"
         to="/"
-        class="mt-md block text-center text-sm text-brand hover:underline"
+        class="tw:mt-base tw:block tw:text-center tw:text-sm tw:text-brand tw:hover:underline"
       >
         {{ $t('setup.back') }}
       </router-link>
