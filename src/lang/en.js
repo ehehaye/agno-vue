@@ -25,6 +25,7 @@ export default {
     deleteConfirm: 'Are you sure you want to delete this conversation?',
     prompt: 'Prompt',
     agent: 'Agent',
+    entity: 'Entity',
     retry: 'Retry',
     loadFailed: 'Failed to load sessions',
     newSession: 'New conversation',
@@ -58,6 +59,23 @@ export default {
   memberRun: {
     runCompleted: 'Run completed',
     inDuration: ' in {duration}',
+  },
+  workflow: {
+    steps: 'Workflow steps',
+    paused: 'Workflow paused',
+    approve: 'Approve & continue',
+    reject: 'Reject',
+    rejectRetry: 'Reject & retry',
+    rejectSkip: 'Reject & skip',
+    feedbackPlaceholder: 'Optional feedback. Sent back to the model when you reject.',
+    unsupportedPause: 'This pause needs a resolution type that the UI does not support yet.',
+    status: {
+      running: 'Running',
+      paused: 'Paused',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      error: 'Error',
+    },
   },
   message: {
     user: 'User',

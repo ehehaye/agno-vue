@@ -24,11 +24,17 @@
           >
             TEAM
           </option>
+          <option
+            :disabled="!workflows.length"
+            value="workflow"
+          >
+            WORKFLOW
+          </option>
         </select>
       </div>
 
       <div class="form-item">
-        <label class="form-label">{{ $t('sidebar.agent') }}</label>
+        <label class="form-label">{{ $t('sidebar.entity') }}</label>
         <select
           :value="selectedEntity?.id || ''"
           :disabled="busy"
@@ -64,15 +70,21 @@ import { usePerfTrack } from '@/hooks/usePerfTrack'
 usePerfTrack()
 const { isStreaming, isLoadingSession } = useAgentRun()
 const {
-  agents, teams, selectedEntity, selectedEntityType,
-  selectEntity, selectDefaultAgent, selectDefaultTeam,
+  agents, teams, workflows, selectedEntity, selectedEntityType,
+  selectEntity, selectDefaultAgent, selectDefaultTeam, selectDefaultWorkflow,
 } = useConfig()
 
 const busy = computed(() => isStreaming.value || isLoadingSession.value)
 
-const entities = computed(() =>
-  selectedEntityType.value === 'team' ? teams.value : agents.value
-)
+const entities = computed(() => {
+  if (selectedEntityType.value === 'team') {
+    return teams.value
+  }
+  if (selectedEntityType.value === 'workflow') {
+    return workflows.value
+  }
+  return agents.value
+})
 
 const handleEntityTypeChange = (event) => {
   const type = event.target.value
@@ -80,6 +92,8 @@ const handleEntityTypeChange = (event) => {
     selectDefaultAgent()
   } else if (type === 'team') {
     selectDefaultTeam()
+  } else if (type === 'workflow') {
+    selectDefaultWorkflow()
   }
 }
 

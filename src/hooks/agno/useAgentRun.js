@@ -17,9 +17,33 @@ import {
   resolveToolCall,
 } from '@/hooks/agno/runState'
 import { useConfig } from '@/hooks/agno/useConfig'
+import {
+  addWorkflowStepToolCall,
+  appendWorkflowStepContent,
+  applyWorkflowRunOutput,
+  applyWorkflowStepOutput,
+  buildStepRequirements,
+  cancelWorkflowRun,
+  completeWorkflowRun,
+  completeWorkflowStep,
+  createWorkflowRun,
+  failWorkflowRun,
+  failWorkflowStep,
+  pauseWorkflowStep,
+  resolveWorkflowStepToolCall,
+  resumeWorkflowRun,
+  setWorkflowStepExecutor,
+  startWorkflowStep,
+} from '@/hooks/agno/workflowState'
 import { isTeamEvent } from '@/types'
 import { uuid } from '@/utils/index'
 import { SSEParser } from '@/utils/sse-parser'
+
+const ENTITY_ENDPOINTS = {
+  agent: 'agents',
+  team: 'teams',
+  workflow: 'workflows',
+}
 
 const messages = ref([])
 const currentRun = ref(null)
@@ -260,13 +284,213 @@ function handleAgentRunEvent(event) {
   }
 }
 
+function handleWorkflowEvent(event) {
+  switch (event.event) {
+  case $c.RunEvent.WorkflowStarted: {
+    onSessionIdUpdate(event)
+    currentRun.value = createWorkflowRun(event)
+    break
+  }
+
+  case $c.RunEvent.WorkflowCompleted: {
+    currentRun.value = completeWorkflowRun(currentRun.value, event)
+    finalizeCurrentRun($c.RunStatus.Completed, event)
+    break
+  }
+
+  case $c.RunEvent.WorkflowError: {
+    const message = getEventError(event)
+    error.value = message
+    currentRun.value = failWorkflowRun(currentRun.value, { ...event, error: message })
+    finalizeCurrentRun($c.RunStatus.Error, { error: message })
+    break
+  }
+
+  case $c.RunEvent.WorkflowCancelled: {
+    currentRun.value = cancelWorkflowRun(currentRun.value, event)
+    finalizeCurrentRun($c.RunStatus.Cancelled)
+    break
+  }
+
+  case $c.RunEvent.WorkflowRunOutput: {
+    currentRun.value = applyWorkflowRunOutput(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.StepStarted: {
+    currentRun.value = startWorkflowStep(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.StepCompleted: {
+    currentRun.value = completeWorkflowStep(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.StepPaused:
+  case $c.RunEvent.StepOutputReview:
+  case $c.RunEvent.StepExecutorPaused: {
+    currentRun.value = pauseWorkflowStep(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.StepContinued:
+  case $c.RunEvent.StepExecutorContinued: {
+    currentRun.value = currentRun.value
+      ? {
+        ...currentRun.value,
+        status: $c.RunStatus.Streaming,
+        pausedRequirement: null,
+        steps: currentRun.value.steps.map((step) =>
+          step.id === event.step_id
+            ? { ...step, status: $c.StepStatus.Running }
+            : step
+        ),
+      }
+      : currentRun.value
+    break
+  }
+
+  case $c.RunEvent.StepError: {
+    currentRun.value = failWorkflowStep(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.StepOutput: {
+    currentRun.value = applyWorkflowStepOutput(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.ParallelExecutionStarted: {
+    currentRun.value = startWorkflowStep(currentRun.value, event, 'Parallel')
+    break
+  }
+
+  case $c.RunEvent.ConditionExecutionStarted: {
+    currentRun.value = startWorkflowStep(currentRun.value, event, 'Condition')
+    break
+  }
+
+  case $c.RunEvent.LoopExecutionStarted: {
+    currentRun.value = startWorkflowStep(currentRun.value, event, 'Loop')
+    break
+  }
+
+  case $c.RunEvent.RouterExecutionStarted: {
+    currentRun.value = startWorkflowStep(currentRun.value, event, 'Router')
+    break
+  }
+
+  case $c.RunEvent.StepsExecutionStarted: {
+    currentRun.value = startWorkflowStep(currentRun.value, event, 'Steps')
+    break
+  }
+
+  case $c.RunEvent.ParallelExecutionCompleted:
+  case $c.RunEvent.ConditionExecutionCompleted:
+  case $c.RunEvent.LoopExecutionCompleted:
+  case $c.RunEvent.RouterExecutionCompleted:
+  case $c.RunEvent.StepsExecutionCompleted: {
+    currentRun.value = completeWorkflowStep(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.RunStarted:
+  case $c.RunEvent.TeamRunStarted: {
+    if (event.step_id) {
+      currentRun.value = setWorkflowStepExecutor(currentRun.value, event)
+    }
+    break
+  }
+
+  case $c.RunEvent.RunContent:
+  case $c.RunEvent.TeamRunContent: {
+    currentRun.value = appendWorkflowStepContent(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.ToolCallStarted:
+  case $c.RunEvent.TeamToolCallStarted: {
+    currentRun.value = addWorkflowStepToolCall(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.ToolCallCompleted:
+  case $c.RunEvent.TeamToolCallCompleted: {
+    currentRun.value = resolveWorkflowStepToolCall(currentRun.value, event)
+    break
+  }
+
+  case $c.RunEvent.RunError:
+  case $c.RunEvent.TeamRunError: {
+    currentRun.value = failWorkflowStep(currentRun.value, {
+      ...event,
+      error: getEventError(event),
+    })
+    break
+  }
+  }
+}
+
 function handleAgentEvent(event) {
-  // TODO: workflow
-  if (isTeamEvent(event)) {
+  if (selectedEntity.value?.type === 'workflow') {
+    handleWorkflowEvent(event)
+  } else if (isTeamEvent(event)) {
     handleTeamEvent(event)
   } else {
     handleAgentRunEvent(event)
   }
+}
+
+async function readEventStream(response) {
+  const reader = response.body?.getReader()
+  if (!reader) {
+    throw new Error('No response body')
+  }
+
+  const decoder = new TextDecoder()
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) {
+      break
+    }
+    parser.parse(decoder.decode(value, { stream: true }), handleAgentEvent)
+  }
+
+  parser.flush(handleAgentEvent)
+}
+
+async function httpError(response, fallback) {
+  try {
+    const data = await response.clone().json()
+    if (typeof data?.detail === 'string' && data.detail) {
+      return new Error(data.detail)
+    }
+  } catch {
+    // Response is not JSON; use the fallback message.
+  }
+  return new Error(fallback)
+}
+
+function finishStreaming(controller) {
+  if (activeController !== controller) {
+    return
+  }
+
+  if (currentRun.value?.status === $c.RunStatus.Streaming) {
+    finalizeCurrentRun(
+      controller.signal.aborted
+        ? $c.RunStatus.Cancelled
+        : $c.RunStatus.Error,
+      controller.signal.aborted
+        ? {}
+        : { error: error.value || 'Stream ended unexpectedly' }
+    )
+  }
+
+  activeController = null
+  isStreaming.value = false
 }
 
 async function sendMessage(content) {
@@ -275,7 +499,7 @@ async function sendMessage(content) {
   }
 
   if (!selectedEntity.value) {
-    error.value = 'Please select an agent or team from the sidebar'
+    error.value = 'Please select an agent, team or workflow from the sidebar'
     return
   }
 
@@ -305,7 +529,7 @@ async function sendMessage(content) {
       formData.append('session_id', currentSessionId.value)
     }
 
-    const endpoint = selectedEntity.value.type === 'team' ? 'teams' : 'agents'
+    const endpoint = ENTITY_ENDPOINTS[selectedEntity.value.type]
     const response = await fetch(
       `${serverUrl.value}/${endpoint}/${selectedEntity.value.id}/runs`,
       {
@@ -319,45 +543,72 @@ async function sendMessage(content) {
     )
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw await httpError(response, `HTTP error! status: ${response.status}`)
     }
 
-    const reader = response.body?.getReader()
-    if (!reader) {
-      throw new Error('No response body')
-    }
-
-    const decoder = new TextDecoder()
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) {
-        break
-      }
-      parser.parse(decoder.decode(value, { stream: true }), handleAgentEvent)
-    }
-
-    parser.flush(handleAgentEvent)
+    await readEventStream(response)
   } catch (err) {
     if (activeController !== controller || err?.name === 'AbortError') {
       return
     }
     error.value = err instanceof Error ? err.message : 'Unknown error'
   } finally {
-    if (activeController === controller) {
-      if (currentRun.value?.status === $c.RunStatus.Streaming) {
-        finalizeCurrentRun(
-          controller.signal.aborted
-            ? $c.RunStatus.Cancelled
-            : $c.RunStatus.Error,
-          controller.signal.aborted
-            ? {}
-            : { error: error.value || 'Stream ended unexpectedly' }
-        )
+    finishStreaming(controller)
+  }
+}
+
+async function continueRun(approved = true, targetRun = null, options = {}) {
+  const run = targetRun || currentRun.value
+  if (isStreaming.value || !run?.pausedRequirement || !run.run_id) {
+    return
+  }
+
+  error.value = null
+  messages.value = messages.value.filter(
+    (message) => message.streamMessage?.run_id !== run.run_id
+  )
+  currentRun.value = resumeWorkflowRun(run)
+  isStreaming.value = true
+  parser.reset()
+
+  const controller = new AbortController()
+  activeController = controller
+
+  try {
+    const formData = new URLSearchParams()
+    formData.append('session_id', run.session_id || '')
+    formData.append('stream', 'true')
+    formData.append(
+      'step_requirements',
+      JSON.stringify(
+        buildStepRequirements(run.pausedRequirement, approved, options)
+      )
+    )
+
+    const response = await fetch(
+      `${serverUrl.value}/workflows/${run.entity_id}/runs/${run.run_id}/continue`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+        signal: controller.signal,
       }
-      activeController = null
-      isStreaming.value = false
+    )
+
+    if (!response.ok) {
+      throw await httpError(response, `HTTP error! status: ${response.status}`)
     }
+
+    await readEventStream(response)
+  } catch (err) {
+    if (activeController !== controller || err?.name === 'AbortError') {
+      return
+    }
+    error.value = err instanceof Error ? err.message : 'Unknown error'
+  } finally {
+    finishStreaming(controller)
   }
 }
 
@@ -449,6 +700,7 @@ export function useAgentRun() {
     isLoadingSession,
     error,
     sendMessage,
+    continueRun,
     loadSession,
     clearMessages,
     cancelRun,

@@ -1,6 +1,6 @@
 import { ConnStatus } from './connection'
 import { Role, Roles } from './role'
-import { RunEvent, RunStatus } from './runEvent'
+import { RunEvent, RunStatus, StepStatus } from './runEvent'
 import { ToolCallStatus, ToolCallStatusList } from './toolCall'
 
 export const $c = Object.freeze({
@@ -9,6 +9,7 @@ export const $c = Object.freeze({
   Roles,
   RunEvent,
   RunStatus,
+  StepStatus,
   ToolCallStatus,
   ToolCallStatusList,
 })

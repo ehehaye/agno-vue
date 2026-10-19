@@ -1,6 +1,6 @@
 export const RunEvent = {
   // Agent Events
-  RunStarted: 'RunStarted', 
+  RunStarted: 'RunStarted',
   RunContent: 'RunContent',
   RunCompleted: 'RunCompleted',
   RunError: 'RunError',
@@ -29,10 +29,46 @@ export const RunEvent = {
   TeamReasoningCompleted: 'TeamReasoningCompleted',
   TeamMemoryUpdateStarted: 'TeamMemoryUpdateStarted',
   TeamMemoryUpdateCompleted: 'TeamMemoryUpdateCompleted',
+  // Workflow Events
+  WorkflowStarted: 'WorkflowStarted',
+  WorkflowCompleted: 'WorkflowCompleted',
+  WorkflowError: 'WorkflowError',
+  WorkflowCancelled: 'WorkflowCancelled',
+  WorkflowRunOutput: 'WorkflowRunOutput',
+  StepStarted: 'StepStarted',
+  StepCompleted: 'StepCompleted',
+  StepPaused: 'StepPaused',
+  StepContinued: 'StepContinued',
+  StepError: 'StepError',
+  StepOutput: 'StepOutput',
+  StepExecutorPaused: 'StepExecutorPaused',
+  StepExecutorContinued: 'StepExecutorContinued',
+  StepOutputReview: 'StepOutputReview',
+  ParallelExecutionStarted: 'ParallelExecutionStarted',
+  ParallelExecutionCompleted: 'ParallelExecutionCompleted',
+  ConditionExecutionStarted: 'ConditionExecutionStarted',
+  ConditionExecutionCompleted: 'ConditionExecutionCompleted',
+  LoopExecutionStarted: 'LoopExecutionStarted',
+  LoopExecutionCompleted: 'LoopExecutionCompleted',
+  LoopIterationStarted: 'LoopIterationStarted',
+  LoopIterationCompleted: 'LoopIterationCompleted',
+  RouterExecutionStarted: 'RouterExecutionStarted',
+  RouterExecutionCompleted: 'RouterExecutionCompleted',
+  StepsExecutionStarted: 'StepsExecutionStarted',
+  StepsExecutionCompleted: 'StepsExecutionCompleted',
 }
 
 export const RunStatus = {
   Streaming: 'streaming',
+  Paused: 'paused',
+  Completed: 'completed',
+  Cancelled: 'cancelled',
+  Error: 'error',
+}
+
+export const StepStatus = {
+  Running: 'running',
+  Paused: 'paused',
   Completed: 'completed',
   Cancelled: 'cancelled',
   Error: 'error',

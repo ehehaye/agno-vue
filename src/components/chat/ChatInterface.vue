@@ -83,7 +83,11 @@ const {
 const minContentHeight = 60
 
 const streamingMessage = computed(() => {
-  if (currentRun.value?.status === $c.RunStatus.Streaming) {
+  const status = currentRun.value?.status
+  if (
+    status === $c.RunStatus.Streaming ||
+    status === $c.RunStatus.Paused
+  ) {
     return {
       id: 'streaming',
       role: $c.Role.Assistant,

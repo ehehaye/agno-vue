@@ -25,19 +25,19 @@ npx eslint src                              # read-only lint check
 
 ## Architecture
 
-- `src/hooks/agno/useConfig.js` — singleton state: `serverUrl` (persisted, empty until Setup configures it), `agents`/`teams` (fetched from `/agents`, `/teams`), `selectedEntity`, `currentSessionId`, `connectionStatus`, `isVerified`; `connect()`/`ensureConnected()` perform the guarded connectivity check.
+- `src/hooks/agno/useConfig.js` — singleton state: `serverUrl` (persisted, empty until Setup configures it), `agents`/`teams`/`workflows` (fetched from `/agents`, `/teams`, `/workflows`), `selectedEntity`, `currentSessionId`, `connectionStatus`, `isVerified`; `connect()`/`ensureConnected()` perform the guarded connectivity check.
 - `src/views/` — `ChatView` (AppLayout + sidebar + ChatInterface) and `SetupView` (server URL form); both are lazily loaded by the router.
-- `src/hooks/agno/useAgentRun.js` — the core: POSTs `/agents|teams/{id}/runs` (form-urlencoded, `stream=true`), feeds chunks through `SSEParser`, keeps shared `currentRun`/`messages` state, and handles cancellation/errors. Pure event transitions live in `runState.js`; `/sessions/{id}/runs` history reconstruction lives in `historyMapper.js`.
+- `src/hooks/agno/useAgentRun.js` — the core: POSTs `/agents|teams|workflows/{id}/runs` (form-urlencoded, `stream=true`), feeds chunks through `SSEParser`, keeps shared `currentRun`/`messages` state, and handles cancellation/errors. Pure agent/team transitions live in `runState.js`, workflow step transitions in `workflowState.js`, and `/sessions/{id}/runs` history reconstruction in `historyMapper.js`. Workflow step-level HITL pauses are resumed through `POST /workflows/{id}/runs/{run_id}/continue` with resolved `step_requirements`.
 - `src/hooks/agno/useSessionManager.js` — session list/paging via `/sessions`; listens on the module-level `events` bus (`RuntimeEvents.SESSION_CREATED`).
 - `src/utils/sse-parser.js` — buffered `SSEParser` (chunk-boundary safe) + `parseSSELine`/`parseSSEStream`.
-- `src/constants/` — `Role`, `RunEvent`, `RunStatus`, `ToolCallStatus`, `ConnStatus`, merged into frozen `$c`, exposed globally as `this.$c` (`src/plugins/constants.js`).
-- `src/components/chat/` — `ChatInterface` (composes `messages` + synthetic streaming message, TOC), `ChatMessage`, `messages/AssistantMessage.vue` with blocks in `messages/blocks/` (ToolCall / Reasoning / MemberRun / Duration).
+- `src/constants/` — `Role`, `RunEvent`, `RunStatus`, `StepStatus`, `ToolCallStatus`, `ConnStatus`, merged into frozen `$c`, exposed globally as `this.$c` (`src/plugins/constants.js`).
+- `src/components/chat/` — `ChatInterface` (composes `messages` + synthetic streaming message, TOC), `ChatMessage`, `messages/AssistantMessage.vue` with blocks in `messages/blocks/` (ToolCall / Reasoning / MemberRun / WorkflowStep / WorkflowPause / Duration).
 - `src/components/md/MarkdownRenderer.vue` — `marked` + `remend` (heals partial streaming markdown) + `DOMPurify` + `htmlparser2` → vNode tree rendered by `NodeRenderer` (text nodes via `TextNodeRenderer`, which appends incrementally to preserve selection), so streaming re-renders diff incrementally. Custom tags (`<thinking>`) are provided as `CUSTOM_COMPONENTS`/`CUSTOM_TAGS` from `src/components/chat/hydration/`.
 
 ## Conventions
 
 - Hooks keep their `ref`s at module scope → shared singleton state across components; call the hook, don't re-create state. Watchers and event listeners are registered once at module scope for the same reason; do not add per-call subscriptions inside the hook factory.
-- API shape: `RunEvent` values are CamelCase strings from the Agno stream (`RunContent`, `TeamToolCallStarted`, …). Team events are detected by the `Team` prefix (`src/types/index.js`), not by identity.
+- API shape: `RunEvent` values are CamelCase strings from the Agno stream (`RunContent`, `TeamToolCallStarted`, `StepPaused`, …). Team events are detected by the `Team` prefix (`src/types/index.js`), not by identity. Workflow streams multiplex step metadata (`step_id`, `step_name`, `step_index`, `parent_step_id`) onto agent/team events, so route nested content by `step_id` (falling back to name + index after a pause/continue).
 - Update runs immutably (`currentRun.value = { ...prev, ... }`, `messages.value = [...messages.value, msg]`).
 - Two component styles coexist: `<script setup>` (enabled by `unplugin-vue2-script-setup`) for newer components, and `export default defineComponent({ ... })` from `@vue/composition-api` for older/stateful ones. Match the surrounding file.
 - ESLint: **no semicolons**, 2-space indent, single quotes, object-curly-spacing `always`, sorted import members. Config is ESLint 10 flat config (`eslint.config.js`). `.prettierrc` also uses `semi: false` — ESLint is authoritative.

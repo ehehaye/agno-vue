@@ -15,7 +15,8 @@ export function hasRunOutput(run) {
     run.content ||
     run.reasoning_content ||
     run.tool_calls?.length ||
-    run.member_runs?.length
+    run.member_runs?.length ||
+    run.steps?.length
   )
 }
 

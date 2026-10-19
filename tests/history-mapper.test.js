@@ -125,3 +125,80 @@ test('returns an empty list for invalid input', () => {
   assert.deepEqual(mapSessionRunsToMessages(null, 'session-1'), [])
   assert.deepEqual(mapSessionRunsToMessages(undefined, 'session-1'), [])
 })
+
+test('maps a completed workflow run with flattened steps', () => {
+  const run = {
+    run_id: 'wf-run-1',
+    workflow_id: 'research-pipeline',
+    workflow_name: 'Research Pipeline',
+    run_input: 'write a report',
+    content: 'published report',
+    status: 'COMPLETED',
+    created_at: 1000,
+    step_results: [
+      { step_id: 's1', step_name: 'research', step_type: 'Step', content: 'outline' },
+      {
+        step_id: 's2',
+        step_name: 'draft-and-review',
+        step_type: 'Parallel',
+        content: 'parallel done',
+        steps: [
+          { step_id: 's3', step_name: 'draft', step_type: 'Step', content: 'draft' },
+        ],
+      },
+    ],
+  }
+
+  const messages = mapSessionRunsToMessages([run], 'session-1')
+  assert.equal(messages.length, 2)
+  assert.equal(messages[0].content, 'write a report')
+
+  const stream = messages[1].streamMessage
+  assert.equal(stream.entity_type, 'workflow')
+  assert.equal(stream.entity_id, 'research-pipeline')
+  assert.equal(stream.entity_name, 'Research Pipeline')
+  assert.equal(stream.status, 'completed')
+  assert.equal(stream.content, 'published report')
+  assert.deepEqual(
+    stream.steps.map((step) => [step.id, step.depth, step.status]),
+    [
+      ['s1', 0, 'completed'],
+      ['s2', 0, 'completed'],
+      ['s3', 1, 'completed'],
+    ]
+  )
+})
+
+test('maps a paused workflow run with its active requirement', () => {
+  const run = {
+    run_id: 'wf-run-1',
+    workflow_id: 'research-pipeline',
+    workflow_name: 'Research Pipeline',
+    run_input: 'write a report',
+    content: '',
+    status: 'PAUSED',
+    created_at: 1000,
+    step_results: [
+      { step_id: 's1', step_name: 'research', step_type: 'Step', content: 'outline' },
+    ],
+    step_requirements: [
+      {
+        step_id: 's2',
+        step_name: 'publish',
+        step_index: 5,
+        step_type: 'Step',
+        requires_confirmation: true,
+        confirmation_message: 'Publish?',
+        on_reject: 'cancel',
+      },
+    ],
+  }
+
+  const messages = mapSessionRunsToMessages([run], 'session-1')
+  const stream = messages[1].streamMessage
+  assert.equal(stream.status, 'paused')
+  assert.equal(stream.pausedRequirement.step_id, 's2')
+  assert.equal(stream.pausedRequirement.confirmation_message, 'Publish?')
+  assert.equal(stream.steps.length, 2)
+  assert.equal(stream.steps[1].status, 'paused')
+})

@@ -25,6 +25,7 @@ export default {
     deleteConfirm: '确定要删除这个会话吗？',
     prompt: '提示',
     agent: '智能体',
+    entity: '实体',
     retry: '重试',
     loadFailed: '会话加载失败',
     newSession: '新建会话',
@@ -58,6 +59,23 @@ export default {
   memberRun: {
     runCompleted: '运行完成',
     inDuration: '，耗时 {duration}',
+  },
+  workflow: {
+    steps: '工作流步骤',
+    paused: '工作流已暂停',
+    approve: '批准并继续',
+    reject: '拒绝',
+    rejectRetry: '拒绝并重试',
+    rejectSkip: '拒绝并跳过',
+    feedbackPlaceholder: '可选：填写意见，拒绝时会反馈给模型。',
+    unsupportedPause: '该暂停需要当前界面尚不支持的确认方式。',
+    status: {
+      running: '运行中',
+      paused: '已暂停',
+      completed: '已完成',
+      cancelled: '已取消',
+      error: '错误',
+    },
   },
   message: {
     user: 'User',
