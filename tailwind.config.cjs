@@ -3,8 +3,10 @@
  * Keep both files in sync when a token changes.
  */
 module.exports = {
-  mode: 'jit',
-  purge: ['./index.html', './src/**/*.{vue,js}'],
+  purge: {
+    enabled: true,
+    content: ['./index.html', './src/**/*.{vue,js}'],
+  },
   darkMode: false,
   corePlugins: {
     // reset.less owns the global reset
