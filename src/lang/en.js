@@ -21,6 +21,7 @@ export default {
     sendKey: '{key} to send',
     send: 'Send',
     stop: 'Stop',
+    stopped: 'Stopped',
     thinking: 'Thinking...',
   },
   toolCall: {

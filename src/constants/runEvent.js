@@ -34,5 +34,6 @@ export const RunEvent = {
 export const RunStatus = {
   Streaming: 'streaming',
   Completed: 'completed',
+  Cancelled: 'cancelled',
   Error: 'error',
 }

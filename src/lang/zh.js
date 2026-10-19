@@ -21,6 +21,7 @@ export default {
     sendKey: '{key} 发送',
     send: '发送',
     stop: '停止',
+    stopped: '已停止',
     thinking: '思考中...',
   },
   toolCall: {

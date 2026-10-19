@@ -47,7 +47,7 @@ import { usePerfTrack } from '@/hooks/usePerfTrack.js'
 import { $c } from '@/constants'
 
 usePerfTrack()
-const { messages, currentRun, isStreaming, sendMessage } = useAgentRun()
+const { messages, currentRun, isStreaming, sendMessage, cancelRun } = useAgentRun()
 
 const minContentHeight = 60
 
@@ -89,8 +89,6 @@ const tocContents = computed(() => displayMessages.value
 const handleSend = async (text) => {
   await sendMessage(text)
 }
-
-const cancelRun = () => { }
 </script>
 
 <style lang="less" scoped>

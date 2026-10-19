@@ -3,6 +3,7 @@ import { isTeamEvent } from '@/types'
 import { SSEParser } from '@/utils/sse-parser'
 import { useConfig } from '@/hooks/agno/useConfig'
 import { uuid } from '@/utils/index'
+import { tryParseJson } from '@/utils/content-utils'
 import events, { RuntimeEvents } from '@/hooks/agno/events'
 import { $c } from '@/constants'
 
@@ -10,6 +11,67 @@ const messages = ref([])
 const currentRun = ref(null)
 const isStreaming = ref(false)
 const error = ref(null)
+let activeController = null
+
+function getEventError(event) {
+  if (typeof event.error === 'string') {
+    return event.error
+  }
+  if (event.error && typeof event.error.message === 'string') {
+    return event.error.message
+  }
+  return event.message || 'Run failed'
+}
+
+function hasRunOutput(run) {
+  return Boolean(
+    run.content ||
+    run.reasoning_content ||
+    run.tool_calls?.length ||
+    run.member_runs?.length
+  )
+}
+
+function finalizeCurrentRun(status, payload = {}) {
+  const prevRun = currentRun.value
+  if (!prevRun) {
+    return null
+  }
+
+  const finalRun = {
+    ...prevRun,
+    content: payload.content ?? prevRun.content,
+    reasoning_content: payload.reasoning_content ?? prevRun.reasoning_content,
+    status,
+    metrics: {
+      ...prevRun.metrics,
+      time_to_first_token:
+        payload.metrics?.time_to_first_token ??
+        prevRun.metrics?.time_to_first_token,
+      duration: payload.metrics?.duration ?? prevRun.metrics?.duration,
+    },
+  }
+
+  if (payload.error) {
+    finalRun.error = payload.error
+  }
+
+  if (hasRunOutput(finalRun)) {
+    messages.value = [
+      ...messages.value,
+      {
+        id: uuid(),
+        role: $c.Role.Assistant,
+        content: finalRun.content,
+        timestamp: Date.now(),
+        streamMessage: finalRun,
+      },
+    ]
+  }
+
+  currentRun.value = null
+  return finalRun
+}
 
 export function useAgentRun() {
   const { serverUrl, connectionStatus, selectedEntity, currentSessionId, setCurrentSessionId } =
@@ -19,11 +81,14 @@ export function useAgentRun() {
   const memberRuns = new Map()
 
   function onSessionIdUpdate(runEvent) {
+    const lastUserMessage = [...messages.value]
+      .reverse()
+      .find((message) => message.role === $c.Role.User)
     const session = {
       agent_id: runEvent.agent_id,
       created_at: new Date(runEvent.created_at * 1000).toISOString(),
       session_id: runEvent.session_id,
-      session_name: messages.value[0]?.content || '',
+      session_name: lastUserMessage?.content || '',
       session_type: selectedEntity.value?.type,
     }
     if (session.session_id !== currentSessionId.value) {
@@ -106,12 +171,29 @@ export function useAgentRun() {
       const completedEvent = event
       const memberRun = memberRuns.get(completedEvent.run_id)
       if (memberRun) {
-        memberRun.content = completedEvent.content
-        memberRun.reasoning_content = completedEvent.reasoning_content
+        memberRun.content = completedEvent.content ?? memberRun.content
+        memberRun.reasoning_content =
+          completedEvent.reasoning_content ?? memberRun.reasoning_content
         memberRun.status = $c.RunStatus.Completed
         memberRun.metrics = {
           time_to_first_token: completedEvent.metrics?.time_to_first_token,
           duration: completedEvent.metrics?.duration,
+        }
+        updateMemberRunsInCurrentRun()
+      }
+      break
+    }
+
+    case $c.RunEvent.RunError:
+    case $c.RunEvent.RunCancelled: {
+      const memberRun = memberRuns.get(event.run_id)
+      if (memberRun) {
+        const isError = event.event === $c.RunEvent.RunError
+        memberRun.status = isError
+          ? $c.RunStatus.Error
+          : $c.RunStatus.Cancelled
+        if (isError) {
+          memberRun.error = getEventError(event)
         }
         updateMemberRunsInCurrentRun()
       }
@@ -193,29 +275,23 @@ export function useAgentRun() {
 
     case $c.RunEvent.TeamRunCompleted: {
       const completedEvent = event
-      const prevRun = currentRun.value
-      if (prevRun) {
-        const finalRun = {
-          ...prevRun,
-          content: completedEvent.content,
-          reasoning_content: completedEvent.reasoning_content,
-          status: $c.RunStatus.Completed,
-          metrics: {
-            ...prevRun.metrics,
-            time_to_first_token: completedEvent.metrics.time_to_first_token,
-            duration: completedEvent.metrics.duration,
-          },
-        }
-        const assistantMessage = {
-          id: uuid(),
-          role: $c.Role.Assistant,
-          content: completedEvent.content,
-          timestamp: Date.now(),
-          streamMessage: finalRun,
-        }
-        messages.value = [...messages.value, assistantMessage]
-        currentRun.value = null
-      }
+      finalizeCurrentRun($c.RunStatus.Completed, {
+        content: completedEvent.content,
+        reasoning_content: completedEvent.reasoning_content,
+        metrics: completedEvent.metrics,
+      })
+      break
+    }
+
+    case $c.RunEvent.TeamRunError: {
+      const message = getEventError(event)
+      error.value = message
+      finalizeCurrentRun($c.RunStatus.Error, { error: message })
+      break
+    }
+
+    case $c.RunEvent.TeamRunCancelled: {
+      finalizeCurrentRun($c.RunStatus.Cancelled)
       break
     }
     }
@@ -301,29 +377,23 @@ export function useAgentRun() {
 
     case $c.RunEvent.RunCompleted: {
       const completedEvent = event
-      const prevRun = currentRun.value
-      if (prevRun) {
-        const finalRun = {
-          ...prevRun,
-          content: completedEvent.content,
-          reasoning_content: completedEvent.reasoning_content,
-          status: $c.RunStatus.Completed,
-          metrics: {
-            ...prevRun.metrics,
-            time_to_first_token: completedEvent.metrics.time_to_first_token,
-            duration: completedEvent.metrics.duration,
-          },
-        }
-        const assistantMessage = {
-          id: uuid(),
-          role: $c.Role.Assistant,
-          content: completedEvent.content,
-          timestamp: Date.now(),
-          streamMessage: finalRun,
-        }
-        messages.value = [...messages.value, assistantMessage]
-        currentRun.value = null
-      }
+      finalizeCurrentRun($c.RunStatus.Completed, {
+        content: completedEvent.content,
+        reasoning_content: completedEvent.reasoning_content,
+        metrics: completedEvent.metrics,
+      })
+      break
+    }
+
+    case $c.RunEvent.RunError: {
+      const message = getEventError(event)
+      error.value = message
+      finalizeCurrentRun($c.RunStatus.Error, { error: message })
+      break
+    }
+
+    case $c.RunEvent.RunCancelled: {
+      finalizeCurrentRun($c.RunStatus.Cancelled)
       break
     }
     }
@@ -355,9 +425,13 @@ export function useAgentRun() {
     }
 
     messages.value = [...messages.value, userMessage]
+    currentRun.value = null
     isStreaming.value = true
     parser.reset()
     memberRuns.clear()
+
+    const controller = new AbortController()
+    activeController = controller
 
     try {
       // TODO: background
@@ -378,6 +452,7 @@ export function useAgentRun() {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: formData.toString(),
+          signal: controller.signal,
         }
       )
 
@@ -400,19 +475,37 @@ export function useAgentRun() {
         const chunk = decoder.decode(value, { stream: true })
         parser.parse(chunk, handleAgentEvent)
       }
+
+      parser.flush(handleAgentEvent)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      error.value = errorMessage
-      if (currentRun.value) {
-        currentRun.value = { ...currentRun.value, status: 'error' }
+      if (activeController !== controller || err?.name === 'AbortError') {
+        return
       }
+      error.value = err instanceof Error ? err.message : 'Unknown error'
     } finally {
-      isStreaming.value = false
+      if (activeController === controller) {
+        if (currentRun.value?.status === $c.RunStatus.Streaming) {
+          finalizeCurrentRun(
+            controller.signal.aborted
+              ? $c.RunStatus.Cancelled
+              : $c.RunStatus.Error,
+            controller.signal.aborted
+              ? {}
+              : { error: error.value || 'Stream ended unexpectedly' }
+          )
+        }
+        activeController = null
+        isStreaming.value = false
+      }
     }
   }
 
+  function cancelRun() {
+    activeController?.abort()
+  }
+
   function clearMessages() {
-    // TODO: AbortController
+    cancelRun()
     messages.value = []
     currentRun.value = null
     error.value = null
@@ -506,7 +599,8 @@ export function useAgentRun() {
             tool: {
               tool_call_id: tc.id,
               tool_name: tc.function.name,
-              tool_args: JSON.parse(tc.function.arguments),
+              tool_args:
+                tryParseJson(tc.function.arguments) ?? tc.function.arguments,
               tool_call_error: false,
               result: null,
               metrics: null,
@@ -567,7 +661,7 @@ export function useAgentRun() {
             memberRunsForThisRun.push({
               run_id: childRun.run_id,
               agent_id: childRun.agent_id,
-              agent_name: childRun.agent_id,
+              agent_name: childRun.agent_name || childRun.agent_id,
               reasoning_content: childRun.reasoning_content || '',
               content: childRun.content || '',
               tool_calls: memberToolCalls,
@@ -607,7 +701,7 @@ export function useAgentRun() {
               session_id: targetSessionId,
               entity_type: entityType,
               entity_id: run.agent_id,
-              entity_name: run.agent_id,
+              entity_name: run.agent_name || run.agent_id,
               reasoning_content: run.reasoning_content || '',
               content: run.content || '',
               tool_calls: toolCalls,
@@ -642,5 +736,6 @@ export function useAgentRun() {
     sendMessage,
     loadSession,
     clearMessages,
+    cancelRun,
   }
 }
