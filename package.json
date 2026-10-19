@@ -28,6 +28,8 @@
     "vue-virtual-scroller": "^1.1.2"
   },
   "devDependencies": {
+    "@tailwindcss/postcss7-compat": "^2.2.17",
+    "autoprefixer": "^9.8.8",
     "code-inspector-plugin": "^1.6.4",
     "eslint": "^8.53.0",
     "eslint-plugin-vue": "^9.18.0",
