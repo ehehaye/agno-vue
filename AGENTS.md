@@ -37,7 +37,7 @@ npx eslint src --ext .vue,.js               # read-only lint check
 - Update runs immutably (`currentRun.value = { ...prev, ... }`, `messages.value = [...messages.value, msg]`).
 - Two component styles coexist: `<script setup>` (enabled by `unplugin-vue2-script-setup`) for newer components, and `export default defineComponent({ ... })` from `@vue/composition-api` for older/stateful ones. Match the surrounding file.
 - ESLint: **no semicolons**, 2-space indent, single quotes, object-curly-spacing `always`, sorted import members. `.prettierrc` says `semi: true` but ESLint is authoritative — write no semicolons.
-- Styles: Less. `variables.less` and `mixins.less` are auto-injected into every Less block by `vite.config.js`, so use `@spacing-md`, `@border-color`, etc. without importing. Prefer `<style lang="less" scoped>`.
+- Styles: Less + Tailwind. `variables.less` and `mixins.less` are auto-injected into every Less block by `vite.config.js`, so use `@spacing-md`, `@border-color`, etc. without importing. Tailwind is wired through `postcss.config.cjs` + `tailwind.config.cjs`; its design tokens mirror `variables.less` (keep both in sync). Prefer `<style lang="less" scoped>` for component-specific styles and Tailwind utilities for new layout/spacing work.
 - Use `@/` alias for `src` imports; import icons/components through their folder `index.js` barrels.
 - User-facing strings go through `$t()` with keys in `src/lang/{en,zh}.js`.
 
