@@ -1,3 +1,52 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme) prefix(tw);
+@import "tailwindcss/utilities.css" prefix(tw);
+
+@source "../../../index.html";
+@source "../../**/*.vue";
+@source "../../**/*.js";
+
+/* Keep in sync with src/assets/styles/variables.less */
+@theme {
+  --color-brand: #3f7ee8;
+  --color-brand-hover: #5a95f5;
+  --color-brand-active: #2f67cc;
+  --color-success: #67c23a;
+  --color-warning: #e6a23c;
+  --color-danger: #f56c6c;
+  --color-info: #909399;
+
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f8fc;
+  --color-surface-hover: #eef5ff;
+
+  --color-ink: #1f2937;
+  --color-ink-muted: #667085;
+  --color-ink-disabled: #98a2b3;
+
+  --color-line: #d9e2ef;
+  --color-line-light: #edf2f7;
+
+  --color-code: #f2f2f2;
+
+  /* Avoid sm/md/lg/xl: those names collide with Tailwind's container scale. */
+  --spacing-tight: 4px;
+  --spacing-compact: 8px;
+  --spacing-base: 16px;
+  --spacing-loose: 24px;
+  --spacing-wide: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+
+  --shadow-focus: 0 0 0 2px rgba(63, 126, 232, 0.14);
+
+  --ease-base: cubic-bezier(0.22, 1, 0.36, 1);
+}

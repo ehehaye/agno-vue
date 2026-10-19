@@ -40,12 +40,12 @@
 
     <!-- error block -->
     <template v-if="message.status === $c.RunStatus.Error">
-      <span class="mt-sm text-xs text-danger">{{ message.error || $t('chat.generationFailed') }}</span>
+      <span class="tw:mt-compact tw:text-xs tw:text-danger">{{ message.error || $t('chat.generationFailed') }}</span>
     </template>
 
     <!-- cancelled block -->
     <template v-if="message.status === $c.RunStatus.Cancelled">
-      <span class="mt-sm text-xs text-ink-muted">{{ $t('chat.stopped') }}</span>
+      <span class="tw:mt-compact tw:text-xs tw:text-ink-muted">{{ $t('chat.stopped') }}</span>
     </template>
 
     <!-- Streaming block -->

@@ -44,13 +44,13 @@
 
     <div
       v-if="sessionsError"
-      class="flex items-center justify-between gap-sm px-md py-xs text-xs text-danger"
+      class="tw:flex tw:items-center tw:justify-between tw:gap-compact tw:px-base tw:py-tight tw:text-xs tw:text-danger"
       role="alert"
     >
-      <span class="min-w-0 truncate">{{ $t('sidebar.loadFailed') }}: {{ sessionsError }}</span>
+      <span class="tw:min-w-0 tw:truncate">{{ $t('sidebar.loadFailed') }}: {{ sessionsError }}</span>
       <button
         type="button"
-        class="flex-shrink-0 underline"
+        class="tw:shrink-0 tw:underline"
         @click="refreshSessions"
       >
         {{ $t('sidebar.retry') }}

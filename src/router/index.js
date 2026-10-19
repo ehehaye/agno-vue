@@ -31,7 +31,7 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  let connected = false
+  let connected
   try {
     connected = await ensureConnected()
   } catch {
