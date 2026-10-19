@@ -14,27 +14,18 @@
   </Collapse>
 </template>
 
-<script>
-import { defineComponent } from '@vue/composition-api'
-import { Collapse } from '@/components/common'
+<script setup>
+import { ref } from '@vue/composition-api'
+import { Collapse } from '@/components/ui'
 
-export default defineComponent({
-  name: 'ReasoningBlock',
-  components: {
-    Collapse,
-  },
-  props: {
-    content: {
-      type: String,
-      default: '',
-    },
-  },
-  data() {
-    return {
-      expanded: true,
-    }
+defineProps({
+  content: {
+    type: String,
+    default: '',
   },
 })
+
+const expanded = ref(true)
 </script>
 
 <style lang="less" scoped>

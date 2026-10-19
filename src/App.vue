@@ -15,7 +15,7 @@
 
 <script setup>
 import { computed, getCurrentInstance } from '@vue/composition-api'
-import { StreamingIndicator } from '@/components/common'
+import { StreamingIndicator } from '@/components/ui'
 import { $c } from '@/constants'
 import { useConfig } from '@/hooks/agno/useConfig'
 

@@ -33,10 +33,11 @@ import {
   resolveWorkflowStepToolCall,
   resumeWorkflowRun,
   setWorkflowStepExecutor,
+  setWorkflowStepMetrics,
   startWorkflowStep,
 } from '@/hooks/agno/workflowState'
-import { isTeamEvent } from '@/types'
-import { uuid } from '@/utils/index'
+import { isTeamEvent } from '@/utils/event'
+import { uuid } from '@/utils/id'
 import { SSEParser } from '@/utils/sse-parser'
 
 const ENTITY_ENDPOINTS = {
@@ -399,6 +400,14 @@ function handleWorkflowEvent(event) {
   case $c.RunEvent.TeamRunStarted: {
     if (event.step_id) {
       currentRun.value = setWorkflowStepExecutor(currentRun.value, event)
+    }
+    break
+  }
+
+  case $c.RunEvent.RunCompleted:
+  case $c.RunEvent.TeamRunCompleted: {
+    if (event.step_id) {
+      currentRun.value = setWorkflowStepMetrics(currentRun.value, event)
     }
     break
   }

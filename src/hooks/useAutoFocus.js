@@ -1,6 +1,6 @@
 import { onMounted, onUnmounted } from '@vue/composition-api'
 
-const FOCUS_KEEPER_SELECTOR = 'input, textarea, select, [contenteditable="true"]'
+const FOCUS_KEEPER_SELECTOR = 'input, textarea, select, button, a, [role="button"], [contenteditable="true"]'
 const BLOCKING_DIALOGS = ['confirm', 'alert', 'prompt']
 
 const autoFocusStack = []

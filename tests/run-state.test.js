@@ -81,11 +81,18 @@ test('completes a run with metrics and falls back to previous values', () => {
 
   const completed = completeRun(run, {
     content: 'final',
-    metrics: { time_to_first_token: 0.2, duration: 1.5 },
+    metrics: {
+      time_to_first_token: 0.2,
+      duration: 1.5,
+      input_tokens: 100,
+      output_tokens: 20,
+      total_tokens: 120,
+    },
   })
   assert.equal(completed.content, 'final')
   assert.equal(completed.status, 'completed')
   assert.equal(completed.metrics.duration, 1.5)
+  assert.equal(completed.metrics.total_tokens, 120)
 
   const withoutMetrics = completeRun(run, { content: 'final' })
   assert.equal(withoutMetrics.metrics.duration, undefined)
@@ -112,10 +119,11 @@ test('tracks member run lifecycle', () => {
 
   const completed = completeMemberRun(resolved, {
     content: 'final',
-    metrics: { duration: 1 },
+    metrics: { duration: 1, input_tokens: 8, output_tokens: 2 },
   })
   assert.equal(completed.status, 'completed')
   assert.equal(completed.content, 'final')
+  assert.equal(completed.metrics.input_tokens, 8)
 })
 
 test('normalizes run errors', () => {

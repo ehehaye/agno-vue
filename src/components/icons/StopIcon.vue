@@ -2,6 +2,7 @@
   <svg
     viewBox="0 0 24 24"
     aria-hidden="true"
+    fill="currentColor"
   >
     <rect
       x="6"

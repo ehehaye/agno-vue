@@ -10,92 +10,67 @@
 
     <template #extra>
       <SpinnerIcon
-        v-if="memberRun.status === $c.RunStatus.Streaming"
+        v-if="isStreaming"
         class="member-run-icon member-run-status-streaming"
       />
       <CheckCircleIcon
-        v-else
+        v-else-if="isCompleted"
         class="member-run-icon member-run-status-completed"
       />
+      <span
+        v-else
+        class="member-run-status"
+      >{{ $t(statusLabelKey) }}</span>
     </template>
 
-    <!-- reasoning block -->
-    <template v-if="memberRun.reasoning_content">
-      <ReasoningBlock :content="memberRun.reasoning_content" />
-    </template>
-
-    <!-- tool call block -->
-    <template v-if="memberRun.tool_calls.length">
-      <ToolCallBlock
-        v-for="toolCall in memberRun.tool_calls"
-        :key="toolCall.tool.tool_call_id"
-        :status="toolCall.status"
-        :tool="toolCall.tool"
-      />
-    </template>
-
-    <!-- content block -->
-    <template v-if="memberRun.content">
-      <MarkdownRenderer :content="memberRun.content" />
-    </template>
-
-    <!-- duration block -->
-    <div v-if="memberRun.status === $c.RunStatus.Completed">
-      <DurationBlock :duration="memberRun.metrics?.duration" />
-    </div>
+    <RunContentBlocks :run="memberRun" />
   </Collapse>
 </template>
 
-<script>
-import { defineComponent } from '@vue/composition-api'
-import { Collapse } from '@/components/common'
-import { MarkdownRenderer } from '@/components/md'
-import { DurationBlock, ReasoningBlock } from '@/components/chat/messages/blocks'
+<script setup>
+import { computed, ref } from '@vue/composition-api'
+import { Collapse } from '@/components/ui'
+import RunContentBlocks from '@/components/chat/messages/blocks/RunContentBlocks.vue'
 import { CheckCircleIcon, RobotIcon, SpinnerIcon } from '@/components/icons'
+import { $c as constants } from '@/constants'
 
-export default defineComponent({
-  name: 'MemberRunBlock',
-  components: {
-    Collapse,
-    ReasoningBlock,
-    MarkdownRenderer,
-    DurationBlock,
-    RobotIcon,
-    SpinnerIcon,
-    CheckCircleIcon,
-  },
-  props: {
-    memberRun: {
-      type: Object,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      isExpanded: false,
-    }
+const props = defineProps({
+  memberRun: {
+    type: Object,
+    required: true,
   },
 })
+
+const isExpanded = ref(false)
+const isStreaming = computed(
+  () => props.memberRun.status === constants.RunStatus.Streaming
+)
+const isCompleted = computed(
+  () => props.memberRun.status === constants.RunStatus.Completed
+)
+
+const STATUS_LABEL_KEYS = {
+  error: 'memberRun.status.error',
+  cancelled: 'memberRun.status.cancelled',
+  paused: 'memberRun.status.paused',
+}
+const statusLabelKey = computed(
+  () => STATUS_LABEL_KEYS[props.memberRun.status] || 'memberRun.status.error'
+)
 </script>
 
 <style lang="less" scoped>
 .member-run-status-streaming {
   color: @primary-color;
-  animation: member-run-spin 1s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 .member-run-status-completed {
   color: @success-color;
 }
 
-@keyframes member-run-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+.member-run-status {
+  .status-badge();
 }
 
 .member-run-name {

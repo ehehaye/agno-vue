@@ -39,6 +39,7 @@ export default {
   chat: {
     emptyState: 'Start a new conversation',
     placeholder: 'Enter your question...',
+    inputLabel: 'Message input',
     sendKey: '{key} to send',
     send: 'Send',
     stop: 'Stop',
@@ -57,8 +58,19 @@ export default {
     },
   },
   memberRun: {
-    runCompleted: 'Run completed',
-    inDuration: ' in {duration}',
+    status: {
+      error: 'Error',
+      cancelled: 'Cancelled',
+      paused: 'Paused',
+    },
+  },
+  usage: {
+    completed: 'Completed',
+    completedIn: 'Completed in {duration}',
+    input: 'Input {tokens}',
+    output: 'Output {tokens}',
+    total: 'Total {tokens}',
+    cached: 'Cached {tokens}',
   },
   workflow: {
     steps: 'Workflow steps',
@@ -80,5 +92,9 @@ export default {
   message: {
     user: 'User',
     assistant: 'AI Assistant',
+  },
+  layout: {
+    toggleSidebar: 'Toggle sidebar',
+    language: 'Language',
   },
 }

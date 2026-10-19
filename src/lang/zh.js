@@ -39,6 +39,7 @@ export default {
   chat: {
     emptyState: '开始一段新会话吧',
     placeholder: '输入您的问题...',
+    inputLabel: '消息输入框',
     sendKey: '{key} 发送',
     send: '发送',
     stop: '停止',
@@ -57,8 +58,19 @@ export default {
     },
   },
   memberRun: {
-    runCompleted: '运行完成',
-    inDuration: '，耗时 {duration}',
+    status: {
+      error: '错误',
+      cancelled: '已取消',
+      paused: '已暂停',
+    },
+  },
+  usage: {
+    completed: '已完成',
+    completedIn: '耗时 {duration}',
+    input: '输入 {tokens}',
+    output: '输出 {tokens}',
+    total: '总计 {tokens}',
+    cached: '缓存读取 {tokens}',
   },
   workflow: {
     steps: '工作流步骤',
@@ -80,5 +92,9 @@ export default {
   message: {
     user: 'User',
     assistant: 'AI Assistant',
+  },
+  layout: {
+    toggleSidebar: '切换侧边栏',
+    language: '语言',
   },
 }

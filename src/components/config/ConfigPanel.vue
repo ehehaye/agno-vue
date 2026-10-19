@@ -13,22 +13,12 @@
           @change="handleEntityTypeChange"
         >
           <option
-            :disabled="!agents.length"
-            value="agent"
+            v-for="type in entityTypes"
+            :key="type.value"
+            :disabled="type.disabled"
+            :value="type.value"
           >
-            AGENT
-          </option>
-          <option
-            :disabled="!teams.length"
-            value="team"
-          >
-            TEAM
-          </option>
-          <option
-            :disabled="!workflows.length"
-            value="workflow"
-          >
-            WORKFLOW
+            {{ type.label }}
           </option>
         </select>
       </div>
@@ -70,38 +60,37 @@ import { usePerfTrack } from '@/hooks/usePerfTrack'
 usePerfTrack()
 const { isStreaming, isLoadingSession } = useAgentRun()
 const {
-  agents, teams, workflows, selectedEntity, selectedEntityType,
-  selectEntity, selectDefaultAgent, selectDefaultTeam, selectDefaultWorkflow,
+  agents,
+  teams,
+  workflows,
+  entitiesFor,
+  selectedEntity,
+  selectedEntityType,
+  selectEntity,
+  selectDefaultEntity,
 } = useConfig()
 
 const busy = computed(() => isStreaming.value || isLoadingSession.value)
 
-const entities = computed(() => {
-  if (selectedEntityType.value === 'team') {
-    return teams.value
-  }
-  if (selectedEntityType.value === 'workflow') {
-    return workflows.value
-  }
-  return agents.value
-})
+const entityTypes = computed(() => [
+  { value: 'agent', label: 'AGENT', disabled: agents.value.length === 0 },
+  { value: 'team', label: 'TEAM', disabled: teams.value.length === 0 },
+  { value: 'workflow', label: 'WORKFLOW', disabled: workflows.value.length === 0 },
+])
+
+const entities = computed(() => entitiesFor(selectedEntityType.value))
 
 const handleEntityTypeChange = (event) => {
-  const type = event.target.value
-  if (type === 'agent') {
-    selectDefaultAgent()
-  } else if (type === 'team') {
-    selectDefaultTeam()
-  } else if (type === 'workflow') {
-    selectDefaultWorkflow()
-  }
+  selectDefaultEntity(event.target.value)
 }
 
 const handleEntityChange = (event) => {
   const id = event.target.value
-  const type = selectedEntityType.value
-  const entity = entities.value.find((e) => e.id === id)
-  selectEntity(type, id, entity?.name)
+  if (!id) {
+    return
+  }
+  const entity = entities.value.find((item) => String(item.id) === id)
+  selectEntity(selectedEntityType.value, id, entity?.name)
 }
 </script>
 

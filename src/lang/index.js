@@ -9,6 +9,11 @@ Vue.use(VueI18n)
 const DEFAULT_LOCALE = 'en'
 const initialLocale = readStorage('locale', DEFAULT_LOCALE)
 
+export const LOCALES = [
+  { value: 'zh', label: '中文' },
+  { value: 'en', label: 'English' },
+]
+
 export function applyLocale(locale) {
   writeStorage('locale', locale)
   document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en'

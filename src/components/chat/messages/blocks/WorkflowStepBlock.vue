@@ -51,17 +51,24 @@
       <template v-if="step.content">
         <MarkdownRenderer :content="step.content" />
       </template>
+
+      <RunUsageBlock
+        v-if="hasStepUsage"
+        :metrics="step.metrics"
+      />
     </Collapse>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from '@vue/composition-api'
-import { Collapse } from '@/components/common'
-import { MarkdownRenderer } from '@/components/md'
+import { Collapse } from '@/components/ui'
+import { MarkdownRenderer } from '@/components/markdown'
+import RunUsageBlock from './RunUsageBlock.vue'
 import { ReasoningBlock, ToolCallBlock } from '@/components/chat/messages/blocks'
 import { CheckCircleIcon, RobotIcon, SpinnerIcon } from '@/components/icons'
 import { $c as constants } from '@/constants'
+import { hasUsage } from '@/utils/usage'
 
 const props = defineProps({
   step: {
@@ -73,6 +80,7 @@ const props = defineProps({
 const isExpanded = ref(props.step.status === constants.StepStatus.Running)
 const isRunning = computed(() => props.step.status === constants.StepStatus.Running)
 const isCompleted = computed(() => props.step.status === constants.StepStatus.Completed)
+const hasStepUsage = computed(() => hasUsage(props.step.metrics))
 
 watch(
   () => props.step.status,

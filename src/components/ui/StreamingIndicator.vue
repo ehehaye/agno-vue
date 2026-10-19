@@ -1,18 +1,13 @@
 <template>
-  <span class="streaming-indicator">
+  <span
+    class="streaming-indicator"
+    role="status"
+  >
     <span class="dot" />
     <span class="dot" />
     <span class="dot" />
   </span>
 </template>
-
-<script>
-import { defineComponent } from '@vue/composition-api'
-
-export default defineComponent({
-  name: 'StreamingIndicator',
-})
-</script>
 
 <style lang="less" scoped>
 .streaming-indicator {

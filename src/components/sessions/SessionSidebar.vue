@@ -57,92 +57,56 @@
       </button>
     </div>
 
+    <div
+      v-if="isLoading && displayedSessions.length === 0"
+      class="loading-state"
+    >
+      <StreamingIndicator />
+    </div>
     <RecycleScroller
-      v-if="displayedSessions.length"
+      v-else-if="displayedSessions.length"
       :items="displayedSessions"
       :item-size="sessionItemHeight"
       key-field="session_id"
       class="sessions-list"
     >
       <template #default="{ item: session }">
-        <div
-          class="session-item"
-          :class="{
-            active: session.session_id === currentSessionId,
-            selected: selectionMode && selectedSessionIds.has(session.session_id),
-          }"
-          tabindex="0"
-          @click="handleSessionClick(session.session_id)"
-          @keydown.enter.prevent="handleSessionClick(session.session_id)"
-          @keydown.space.prevent="handleSessionClick(session.session_id)"
-        >
-          <span
-            v-if="selectionMode"
-            class="select-indicator"
-            :class="{ checked: selectedSessionIds.has(session.session_id) }"
-          />
-          <div class="session-content">
-            <div
-              class="session-title"
-              :title="session.session_name"
-            >
-              {{ truncateByWidth(session.session_name, 200) }}
-            </div>
-            <div class="session-time">{{ formatTime(session.created_at) }}</div>
-          </div>
-          <button
-            v-if="!selectionMode"
-            type="button"
-            class="delete-btn ai-button"
-            :aria-label="$t('sidebar.deleteSession')"
-            @click.stop="handleDelete(session.session_id)"
-          >
-            x
-          </button>
-        </div>
+        <SessionListItem
+          :session="session"
+          :active="session.session_id === currentSessionId"
+          :selection-mode="selectionMode"
+          :selected="selectedSessionIds.has(session.session_id)"
+          @select="handleSessionClick"
+          @delete="handleDelete"
+        />
       </template>
     </RecycleScroller>
     <div
-      v-else
+      v-else-if="!sessionsError"
       class="empty-state"
     >
       <p>{{ $t('sidebar.noSessions') }}</p>
     </div>
 
-    <div
-      v-if="totalPages > 1"
-      class="session-pager"
-    >
-      <button
-        type="button"
-        class="pager-btn"
-        :disabled="page <= 1 || isLoading"
-        :aria-label="$t('sidebar.prev')"
-        @click="fetchSessions(page - 1)"
-      >
-        &lsaquo;
-      </button>
-      <span>{{ page }} / {{ totalPages }}</span>
-      <button
-        type="button"
-        class="pager-btn"
-        :disabled="page >= totalPages || isLoading"
-        :aria-label="$t('sidebar.next')"
-        @click="fetchSessions(page + 1)"
-      >
-        &rsaquo;
-      </button>
-    </div>
+    <SessionPager
+      :page="page"
+      :total-pages="totalPages"
+      :is-loading="isLoading"
+      @change="fetchSessions"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from '@vue/composition-api'
-import { useSessionManager } from '@/hooks/agno/useSessionManager.js'
+import SessionListItem from '@/components/sessions/SessionListItem.vue'
+import SessionPager from '@/components/sessions/SessionPager.vue'
+import { StreamingIndicator } from '@/components/ui'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
-import { truncateByWidth } from '@/utils'
+import { useSessionManager } from '@/hooks/agno/useSessionManager.js'
+import { formatSessionName, formatSessionTime } from '@/utils/session'
 import i18n from '@/lang'
 
 usePerfTrack()
@@ -155,6 +119,7 @@ const {
   isLoading,
   selectedSessionIds,
   deleteSelectedSessions,
+  deleteSession,
   toggleSessionSelection,
   selectAllSessions,
   clearSelection,
@@ -165,27 +130,13 @@ const {
 const sessionItemHeight = 64
 const selectionMode = ref(false)
 
-const formatTime = (time) => new Date(time).toLocaleString()
-const formatSessionName = (name) => {
-  if (typeof name !== 'string') {
-    return name || ''
-  }
-
-  // Name is a JSON string during session creation
-  if (name.includes('input_content')) {
-    try {
-      return JSON.parse(name).input_content
-    } catch {
-      return name
-    }
-  }
-  return name
-}
-
-const displayedSessions = computed(() => sessions.value.map(session => ({
-  ...session,
-  session_name: formatSessionName(session.session_name),
-})))
+const displayedSessions = computed(() =>
+  sessions.value.map((session) => ({
+    ...session,
+    display_name: formatSessionName(session.session_name),
+    display_time: formatSessionTime(session.created_at),
+  }))
+)
 
 const toggleSelectionMode = () => {
   selectionMode.value = !selectionMode.value
@@ -217,9 +168,7 @@ const handleDelete = async (id) => {
   if (!window.confirm(i18n.t('sidebar.deleteConfirm'))) {
     return
   }
-
-  selectedSessionIds.value = new Set([id])
-  await deleteSelectedSessions()
+  await deleteSession(id)
 }
 
 const handleBulkDelete = async () => {
@@ -320,170 +269,13 @@ const handleBulkDelete = async () => {
     flex: 1;
     padding-top: 2px;
     min-height: 0;
-
-    .session-item {
-      position: relative;
-      box-sizing: border-box;
-      height: calc(100% - @spacing-xs);
-      margin-bottom: @spacing-xs;
-      padding: 10px 12px;
-      border-radius: @border-radius-md;
-      cursor: pointer;
-      transition:
-        transform @transition-fast,
-        background-color @transition-base,
-        border-color @transition-fast;
-      border: 1px solid @border-color;
-      background-color: @surface-color;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      outline: none;
-
-      &:hover {
-        background-color: @surface-hover;
-        border-color: @primary-color;
-      }
-
-      &.active,
-      &.selected {
-        background: fade(@primary-color, 8%);
-        border-color: @primary-color;
-      }
-
-      &.active {
-        border-left-width: 3px;
-        border-left-color: @primary-color;
-      }
-
-      &:focus-visible {
-        border-color: @primary-color;
-        outline: 2px solid rgba(63, 126, 232, 0.2);
-        outline-offset: -1px;
-      }
-
-      &:hover .delete-btn,
-      &:focus-within .delete-btn {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      .select-indicator {
-        flex-shrink: 0;
-        width: 14px;
-        height: 14px;
-        margin-right: @spacing-sm;
-        border: 1px solid @border-color;
-        border-radius: 50%;
-        background: @surface-color;
-        transition:
-          background-color @transition-fast,
-          border-color @transition-fast;
-
-        &.checked {
-          border-color: @primary-color;
-          background: @primary-color;
-          box-shadow: inset 0 0 0 3px @surface-color;
-        }
-      }
-
-      .session-content {
-        flex: 1;
-        overflow: hidden;
-        margin-right: @spacing-sm;
-      }
-
-      .session-title {
-        font-size: 14px;
-        font-weight: 500;
-        color: @text-color;
-        margin-bottom: 4px;
-        .ellipsis();
-      }
-
-      .session-time {
-        font-size: 12px;
-        color: lighten(@text-color, 20%);
-      }
-
-      .delete-btn {
-        opacity: 0;
-        transform: scale(0.86);
-        transition:
-          opacity @transition-fast,
-          transform @transition-fast,
-          background-color @transition-fast,
-          color @transition-fast;
-        padding: 0;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        border-color: transparent;
-        background: fade(@error-color, 10%);
-        color: @error-color;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        &:hover {
-          background: @error-color;
-          color: #fff;
-        }
-
-        &:active {
-          transform: scale(0.94);
-        }
-
-        &:focus-visible {
-          opacity: 1;
-          transform: scale(1);
-          outline: 2px solid fade(@error-color, 30%);
-          outline-offset: 2px;
-        }
-      }
-    }
-
-    .empty-state {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: lighten(@text-color, 20%);
-      font-size: 14px;
-    }
   }
 
-  .session-pager {
-    flex-shrink: 0;
+  .loading-state {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: @spacing-md;
-    padding-top: @spacing-sm;
-    font-size: 12px;
-    color: @text-secondary;
-
-    .pager-btn {
-      width: 24px;
-      height: 24px;
-      padding: 0;
-      border: 1px solid @border-color;
-      border-radius: @border-radius-sm;
-      background: @surface-color;
-      color: @text-secondary;
-      cursor: pointer;
-
-      &:hover:not(:disabled) {
-        border-color: @primary-color;
-        color: @primary-color;
-      }
-
-      &:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-    }
   }
 }
 </style>

@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import AppLayout from '@/components/layouts/AppLayout.vue'
+import AppLayout from '@/components/layout/AppLayout.vue'
 import ChatInterface from '@/components/chat/ChatInterface.vue'
 import SessionSidebar from '@/components/sessions/SessionSidebar.vue'
 import ConfigPanel from '@/components/config/ConfigPanel.vue'

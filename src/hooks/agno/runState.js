@@ -94,10 +94,7 @@ export function completeRun(run, event) {
     status: $c.RunStatus.Completed,
     metrics: {
       ...run.metrics,
-      time_to_first_token:
-        event.metrics?.time_to_first_token ??
-        run.metrics?.time_to_first_token,
-      duration: event.metrics?.duration ?? run.metrics?.duration,
+      ...event.metrics,
     },
   }
 }
@@ -158,8 +155,8 @@ export function completeMemberRun(memberRun, event) {
       event.reasoning_content ?? memberRun.reasoning_content,
     status: $c.RunStatus.Completed,
     metrics: {
-      time_to_first_token: event.metrics?.time_to_first_token,
-      duration: event.metrics?.duration,
+      ...memberRun.metrics,
+      ...event.metrics,
     },
   }
 }
