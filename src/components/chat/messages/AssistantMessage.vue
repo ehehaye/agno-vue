@@ -1,52 +1,22 @@
 <template>
-  <div
-    :id="`assistant-message-${message.id}`"
-    class="message-assistant"
-  >
-    <!-- reasoning block -->
-    <template v-if="message.reasoning_content">
-      <ReasoningBlock :content="message.reasoning_content" />
-    </template>
+  <div class="message-assistant">
+    <RunContentBlocks :run="message">
+      <template v-if="memberRuns.length > 0">
+        <MemberRunBlock
+          v-for="memberRun in memberRuns"
+          :key="memberRun.run_id"
+          :member-run="memberRun"
+        />
+      </template>
 
-    <!-- tool call block -->
-    <template v-if="message.tool_calls.length > 0">
-      <ToolCallBlock
-        v-for="toolCall in message.tool_calls"
-        :key="toolCall.tool.tool_call_id"
-        class="tool-call-block"
-        :status="toolCall.status"
-        :tool="toolCall.tool"
-      />
-    </template>
+      <template v-if="workflowSteps.length > 0">
+        <WorkflowStepsBlock :steps="workflowSteps" />
+      </template>
 
-    <!-- member run block -->
-    <template v-if="message.member_runs.length > 0">
-      <MemberRunBlock
-        v-for="memberRun in message.member_runs"
-        :key="memberRun.run_id"
-        :member-run="memberRun"
-      />
-    </template>
-
-    <!-- workflow step blocks -->
-    <template v-if="message.steps && message.steps.length > 0">
-      <WorkflowStepsBlock :steps="message.steps" />
-    </template>
-
-    <!-- workflow pause block -->
-    <template v-if="message.status === $c.RunStatus.Paused">
-      <WorkflowPauseBlock :run="message" />
-    </template>
-
-    <!-- content block -->
-    <template v-if="message.content">
-      <MarkdownRenderer :content="message.content" />
-    </template>
-
-    <!-- completed block -->
-    <template v-if="message.status === $c.RunStatus.Completed">
-      <DurationBlock :duration="message.metrics?.duration" />
-    </template>
+      <template v-if="message.status === $c.RunStatus.Paused">
+        <WorkflowPauseBlock :run="message" />
+      </template>
+    </RunContentBlocks>
 
     <!-- error block -->
     <template v-if="message.status === $c.RunStatus.Error">
@@ -67,27 +37,21 @@
 
 <script>
 import { defineComponent } from '@vue/composition-api'
-import { StreamingIndicator } from '@/components/common'
-import { MarkdownRenderer } from '@/components/md'
-import { CUSTOM_COMPONENTS, CUSTOM_TAGS } from '@/components/chat/hydration'
+import { CUSTOM_COMPONENTS, CUSTOM_TAGS } from '@/components/chat/customComponents'
 import {
-  DurationBlock,
   MemberRunBlock,
-  ReasoningBlock,
-  ToolCallBlock,
+  RunContentBlocks,
   WorkflowPauseBlock,
   WorkflowStepsBlock,
 } from '@/components/chat/messages/blocks'
+import { StreamingIndicator } from '@/components/ui'
 
 export default defineComponent({
   name: 'AssistantMessage',
   components: {
-    MarkdownRenderer,
     StreamingIndicator,
-    ReasoningBlock,
-    DurationBlock,
     MemberRunBlock,
-    ToolCallBlock,
+    RunContentBlocks,
     WorkflowPauseBlock,
     WorkflowStepsBlock,
   },
@@ -104,13 +68,19 @@ export default defineComponent({
         status: '',
         content: '',
         reasoning_content: '',
+        tool_calls: [],
         member_runs: [],
         steps: [],
       }),
     },
   },
+  computed: {
+    memberRuns() {
+      return this.message.member_runs || []
+    },
+    workflowSteps() {
+      return this.message.steps || []
+    },
+  },
 })
 </script>
-
-<style lang="less" scoped>
-</style>

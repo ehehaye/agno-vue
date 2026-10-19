@@ -6,20 +6,15 @@
   />
 </template>
 
-<script>
-import { defineComponent } from '@vue/composition-api'
-
-export default defineComponent({
-  name: 'UserMessage',
-  props: {
-    message: {
-      type: Object,
-      default: () => ({
-        id: '',
-        content: '',
-      }),
-    },
-  }
+<script setup>
+defineProps({
+  message: {
+    type: Object,
+    default: () => ({
+      id: '',
+      content: '',
+    }),
+  },
 })
 </script>
 

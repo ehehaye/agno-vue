@@ -11,11 +11,19 @@
         v-else-if="displayMessages.length === 0"
         class="empty-state"
       >
-        <div class="empty-icon">💬</div>
+        <div
+          class="empty-icon"
+          aria-hidden="true"
+        >
+          💬
+        </div>
         <p class="empty-text">{{ $t('chat.emptyState') }}</p>
       </div>
       <template v-else>
-        <StickToBottom :messages="displayMessages">
+        <StickToBottom
+          :messages="displayMessages"
+          @scroll="handleChatScroll"
+        >
           <ChatMessage
             v-for="message in displayMessages"
             :id="`message-${message.id}`"
@@ -25,10 +33,10 @@
           />
         </StickToBottom>
         <Toc
-          v-show="tocContents.length > 1"
-          :contents="tocContents"
-          container-selector=".stick-to-bottom"
-          :min-content-height="minContentHeight * 2"
+          v-show="tocItems.length > 1"
+          :items="tocItems"
+          :active-id="activeTocId"
+          @navigate="handleTocNavigate"
         />
       </template>
     </div>
@@ -54,19 +62,18 @@
       :streaming="isStreaming"
       :loading="isLoadingSession"
       @cancel="cancelRun"
-      @send="handleSend"
+      @send="sendMessage"
     />
   </div>
 </template>
 
 <script setup>
-import { computed } from '@vue/composition-api'
-import Sender from '@/components/ai/Sender.vue'
-import StickToBottom from '@/components/ai/StickToBottom.vue'
-import ChatMessage from '@/components/chat/ChatMessage.vue'
-import { StreamingIndicator, Toc } from '@/components/common'
+import { computed, onBeforeUnmount, ref, watch } from '@vue/composition-api'
+import ChatMessage from './ChatMessage.vue'
+import { Sender, StickToBottom, StreamingIndicator, Toc } from '@/components/ui'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { usePerfTrack } from '@/hooks/usePerfTrack.js'
+import { getDistanceToBottom } from '@/utils/scroll'
 import { $c } from '@/constants'
 
 usePerfTrack()
@@ -80,7 +87,8 @@ const {
   cancelRun,
 } = useAgentRun()
 
-const minContentHeight = 60
+const activeTocId = ref('')
+let activeFrame = null
 
 const streamingMessage = computed(() => {
   const status = currentRun.value?.status
@@ -106,24 +114,77 @@ const displayMessages = computed(() => {
   return [...messages.value]
 })
 
-const tocContents = computed(() => displayMessages.value
-  .map((message, idx) => {
-    const getHeight = ({ id }) => document.getElementById(`message-${id}`)?.offsetHeight || 0
-    return {
-      ...message,
-      hash: `#message-${message.id}`,
-      getHeight() {
-        const response = displayMessages.value[idx + 1]
-        return getHeight(message) + (response ? getHeight(response) : 0)
-      }
-    }
-  })
-  .filter(({ role }) => role === $c.Role.User)
+const tocItems = computed(() =>
+  displayMessages.value
+    .filter((message) => message.role === $c.Role.User)
+    .map((message) => ({
+      id: message.id,
+      label: message.content,
+    }))
 )
 
-const handleSend = async (text) => {
-  await sendMessage(text)
+const tocKey = computed(() => tocItems.value.map((item) => item.id).join('|'))
+
+watch(
+  tocKey,
+  () => {
+    const items = tocItems.value
+    if (!items.length) {
+      activeTocId.value = ''
+      return
+    }
+    if (!items.some((item) => item.id === activeTocId.value)) {
+      activeTocId.value = items[0].id
+    }
+  },
+  { immediate: true }
+)
+
+const handleChatScroll = (container) => {
+  if (activeFrame) {
+    cancelAnimationFrame(activeFrame)
+  }
+  activeFrame = requestAnimationFrame(() => {
+    activeFrame = null
+    const items = tocItems.value
+    if (!items.length || !container) {
+      return
+    }
+
+    const scrollable = container.scrollHeight - container.clientHeight
+    if (scrollable > 100 && getDistanceToBottom(container) <= 100) {
+      activeTocId.value = items[items.length - 1].id
+      return
+    }
+
+    const containerTop = container.getBoundingClientRect().top
+    let nextActive = items[0].id
+    for (const item of items) {
+      const el = document.getElementById(`message-${item.id}`)
+      if (!el) {
+        continue
+      }
+      if (el.getBoundingClientRect().top - containerTop <= 24) {
+        nextActive = item.id
+      } else {
+        break
+      }
+    }
+    activeTocId.value = nextActive
+  })
 }
+
+const handleTocNavigate = (id) => {
+  activeTocId.value = id
+  const el = document.getElementById(`message-${id}`)
+  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+onBeforeUnmount(() => {
+  if (activeFrame) {
+    cancelAnimationFrame(activeFrame)
+  }
+})
 
 const dismissError = () => {
   runError.value = null
@@ -140,20 +201,6 @@ const dismissError = () => {
   padding: @spacing-lg 0;
   gap: @spacing-md;
   background: #fff;
-
-  .chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-
-    .chat-title {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: @text-color;
-    }
-  }
 
   .chat-messages {
     position: relative;

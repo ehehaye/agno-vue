@@ -6,7 +6,8 @@
     <button
       type="button"
       class="collapse-header"
-      :aria-expanded="expanded"
+      :aria-expanded="internalExpanded"
+      :aria-controls="rendered ? bodyId : null"
       @click="toggle"
     >
       <div
@@ -21,14 +22,15 @@
       </div>
       <div
         class="collapse-icon"
-        :class="{ expanded }"
+        :class="{ expanded: internalExpanded }"
       >
         <ChevronRightIcon class="collapse-chevron" />
       </div>
     </button>
     <div
       v-if="rendered"
-      v-show="expanded"
+      v-show="internalExpanded"
+      :id="bodyId"
       class="collapse-body"
     >
       <slot />
@@ -39,6 +41,8 @@
 <script>
 import { defineComponent } from '@vue/composition-api'
 import { ChevronRightIcon } from '@/components/icons'
+
+let collapseId = 0
 
 export default defineComponent({
   name: 'Collapse',
@@ -62,14 +66,10 @@ export default defineComponent({
   },
   data() {
     return {
+      bodyId: `collapse-body-${++collapseId}`,
       internalExpanded: this.value,
       rendered: this.value || !this.lazy,
     }
-  },
-  computed: {
-    expanded() {
-      return this.internalExpanded
-    },
   },
   watch: {
     value(newValue) {

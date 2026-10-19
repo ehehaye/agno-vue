@@ -1,3 +1,5 @@
 export { default as Collapse } from './Collapse.vue'
+export { default as Sender } from './Sender.vue'
+export { default as StickToBottom } from './StickToBottom.vue'
 export { default as StreamingIndicator } from './StreamingIndicator.vue'
 export { default as Toc } from './Toc.vue'

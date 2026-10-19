@@ -10,6 +10,7 @@ import {
   createWorkflowRun,
   pauseWorkflowStep,
   resolveWorkflowStepToolCall,
+  setWorkflowStepMetrics,
   startWorkflowStep,
 } from '../src/hooks/agno/workflowState.js'
 
@@ -226,4 +227,58 @@ test('completes the workflow and all running steps', () => {
   assert.equal(run.status, 'completed')
   assert.equal(run.content, 'done')
   assert.equal(run.steps[0].status, 'completed')
+})
+
+test('stores step usage from the completion response', () => {
+  let run = createWorkflowRun(startedEvent)
+  run = startWorkflowStep(run, { step_id: 's1', step_name: 'research' })
+  run = completeWorkflowStep(run, {
+    step_id: 's1',
+    step_name: 'research',
+    content: 'done',
+    step_response: {
+      metrics: { input_tokens: 10, output_tokens: 2, total_tokens: 12 },
+    },
+  })
+
+  assert.deepEqual(run.steps[0].metrics, {
+    input_tokens: 10,
+    output_tokens: 2,
+    total_tokens: 12,
+  })
+})
+
+test('applies executor usage before StepCompleted arrives', () => {
+  let run = createWorkflowRun(startedEvent)
+  run = startWorkflowStep(run, { step_id: 's1', step_name: 'research' })
+  run = setWorkflowStepMetrics(run, {
+    step_id: 's1',
+    step_name: 'research',
+    metrics: { input_tokens: 4, output_tokens: 1, total_tokens: 5 },
+  })
+
+  assert.equal(run.steps[0].metrics.total_tokens, 5)
+})
+
+test('aggregates step usage when the workflow completes', () => {
+  let run = createWorkflowRun(startedEvent)
+  run = startWorkflowStep(run, { step_id: 's1', step_name: 'research' })
+  run = completeWorkflowStep(run, {
+    step_id: 's1',
+    step_name: 'research',
+    metrics: { input_tokens: 10, output_tokens: 2, total_tokens: 12 },
+  })
+  run = startWorkflowStep(run, { step_id: 's2', step_name: 'draft' })
+  run = completeWorkflowStep(run, {
+    step_id: 's2',
+    step_name: 'draft',
+    metrics: { input_tokens: 5, output_tokens: 1, total_tokens: 6 },
+  })
+  run = completeWorkflowRun(run, { content: 'done' })
+
+  assert.deepEqual(run.metrics, {
+    input_tokens: 15,
+    output_tokens: 3,
+    total_tokens: 18,
+  })
 })

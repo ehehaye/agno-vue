@@ -243,6 +243,18 @@ export function useConfig() {
     }
   }
 
+  const selectDefaultEntity = (type) => {
+    if (type === 'team') {
+      selectDefaultTeam()
+    } else if (type === 'workflow') {
+      selectDefaultWorkflow()
+    } else {
+      selectDefaultAgent()
+    }
+  }
+
+  const entitiesFor = (type) => entityList(type)
+
   return {
     serverUrl,
     defaultServerUrl,
@@ -253,6 +265,7 @@ export function useConfig() {
     agents,
     teams,
     workflows,
+    entitiesFor,
     selectedEntity,
     selectedEntityType,
     currentSessionId,
@@ -267,6 +280,7 @@ export function useConfig() {
     selectDefaultAgent,
     selectDefaultTeam,
     selectDefaultWorkflow,
+    selectDefaultEntity,
     setCurrentSessionId,
     error,
   }

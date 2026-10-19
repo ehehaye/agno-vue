@@ -4,8 +4,9 @@
       ref="textareaRef"
       v-model="value"
       class="ai-textarea"
-      :rows="`${maxRows}`"
+      :rows="maxRows"
       :placeholder="$t('chat.placeholder')"
+      :aria-label="$t('chat.inputLabel')"
       :disabled="loading"
       @keydown="handleKeydown"
       @compositionstart="handleCompositionStart"
@@ -63,7 +64,7 @@ const maxRows = computed(() => rows.value >= 3 ? 3 : rows.value)
 const disabled = computed(() => props.loading || (!props.streaming && !value.value.trim()))
 
 const send = () => {
-  if (disabled.value) {
+  if (props.streaming || disabled.value) {
     return
   }
   const text = value.value
@@ -72,20 +73,39 @@ const send = () => {
   focus()
 }
 
+const insertNewlineAtCaret = async () => {
+  const el = textareaRef.value
+  if (!el) {
+    value.value += '\n'
+    return
+  }
+
+  const start = el.selectionStart ?? value.value.length
+  const end = el.selectionEnd ?? start
+  value.value = value.value.slice(0, start) + '\n' + value.value.slice(end)
+  await nextTick()
+  el.selectionStart = el.selectionEnd = start + 1
+  el.scrollTop = el.scrollHeight
+}
+
 const handleKeydown = async (event) => {
   if (props.loading || composing.value || event.isComposing || event.keyCode === 229) {
     return
   }
 
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    if ((isMac ? event.metaKey : event.altKey)) {
-      value.value += '\n'
-      await nextTick()
-      textareaRef.value.scrollTop = textareaRef.value.scrollHeight
-    } else {
-      send()
-    }
+  if (event.key !== 'Enter') {
+    return
+  }
+
+  event.preventDefault()
+  if (props.streaming) {
+    return
+  }
+
+  if (isMac ? event.metaKey : event.altKey) {
+    await insertNewlineAtCaret()
+  } else {
+    send()
   }
 }
 

@@ -3,7 +3,12 @@
     class="layout-container"
     :class="{ 'is-aside-collapsed': isAsideCollapsed }"
   >
-    <aside class="layout-aside">
+    <aside
+      id="app-aside"
+      class="layout-aside"
+      :aria-hidden="isAsideCollapsed"
+      :inert="isAsideCollapsed"
+    >
       <div class="layout-aside-inner">
         <slot name="aside" />
       </div>
@@ -15,6 +20,9 @@
           <button
             class="aside-toggle ai-button"
             type="button"
+            :aria-label="$t('layout.toggleSidebar')"
+            :aria-expanded="isAsideCollapsed ? 'false' : 'true'"
+            aria-controls="app-aside"
             @click="toggleAside"
           >
             <span class="toggle-icon" />
@@ -25,9 +33,15 @@
           <select
             v-model="$i18n.locale"
             class="lang-select ai-select"
+            :aria-label="$t('layout.language')"
           >
-            <option value="zh">中文</option>
-            <option value="en">English</option>
+            <option
+              v-for="locale in locales"
+              :key="locale.value"
+              :value="locale.value"
+            >
+              {{ locale.label }}
+            </option>
           </select>
         </div>
       </header>
@@ -41,7 +55,7 @@
 
 <script setup>
 import { getCurrentInstance, ref, watch } from '@vue/composition-api'
-import { applyLocale } from '@/lang'
+import { LOCALES, applyLocale } from '@/lang'
 
 defineProps({
   title: {
@@ -50,6 +64,7 @@ defineProps({
   },
 })
 
+const locales = LOCALES
 const i18n = getCurrentInstance().proxy.$i18n
 watch(() => i18n.locale, (locale) => applyLocale(locale))
 
@@ -60,6 +75,8 @@ const toggleAside = () => {
 </script>
 
 <style lang="less" scoped>
+@aside-width: 300px;
+
 .layout-container {
   display: flex;
   height: 100vh;
@@ -67,9 +84,9 @@ const toggleAside = () => {
   overflow: hidden;
 
   .layout-aside {
-    width: 300px;
+    width: @aside-width;
     height: 100%;
-    flex: 0 0 300px;
+    flex: 0 0 @aside-width;
     border-right: 1px solid @border-color;
     overflow: hidden;
     background: @surface-color;
@@ -79,7 +96,7 @@ const toggleAside = () => {
       border-color @transition-fast;
 
     .layout-aside-inner {
-      width: 300px;
+      width: @aside-width;
       height: 100%;
       opacity: 1;
       transform: translateX(0);
@@ -110,8 +127,15 @@ const toggleAside = () => {
     justify-content: space-between;
 
     .header-title {
+      position: relative;
+      z-index: 1;
       height: 32px;
       line-height: 32px;
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: @text-color;
     }
 
     .header-left {
@@ -171,15 +195,6 @@ const toggleAside = () => {
           top: 5px;
         }
       }
-    }
-
-    h1 {
-      position: relative;
-      z-index: 1;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      color: @text-color;
     }
 
     .header-right {

@@ -17,7 +17,7 @@
 
     <!-- args block -->
     <Collapse
-      v-if="tool.tool_args"
+      v-if="argsMarkdown"
       :gap="false"
     >
       <template #header>
@@ -25,13 +25,13 @@
       </template>
       <MarkdownRenderer
         class="tool-call-args"
-        :content="argus"
+        :content="argsMarkdown"
       />
     </Collapse>
 
     <!-- result block -->
     <Collapse
-      v-if="tool.result"
+      v-if="resultMarkdown"
       :gap="false"
     >
       <template #header>
@@ -39,64 +39,62 @@
       </template>
       <MarkdownRenderer
         class="tool-call-result"
-        :content="result"
+        :content="resultMarkdown"
       />
     </Collapse>
   </Collapse>
 </template>
 
-<script>
-import { defineComponent } from '@vue/composition-api'
-import { Collapse } from '@/components/common'
-import { MarkdownRenderer } from '@/components/md'
+<script setup>
+import { computed } from '@vue/composition-api'
+import { Collapse } from '@/components/ui'
+import { MarkdownRenderer } from '@/components/markdown'
 import { WrenchIcon } from '@/components/icons'
-import { analyzeContent } from '@/utils/content-utils'
-import { $c } from '@/constants'
+import { analyzeContent } from '@/utils/content'
+import { $c as constants } from '@/constants'
 
-export default defineComponent({
-  name: 'ToolCallBlock',
-  components: {
-    Collapse,
-    MarkdownRenderer,
-    WrenchIcon,
+const props = defineProps({
+  status: {
+    type: String,
+    default: constants.ToolCallStatus.Running,
+    validator: (val) => constants.ToolCallStatusList.includes(val),
   },
-  mixins: [],
-  props: {
-    status: {
-      type: String,
-      default: '',
-      validator: (val) => $c.ToolCallStatusList.includes(val)
-    },
-    tool: {
-      type: Object,
-      default: () => ({})
-    }
+  tool: {
+    type: Object,
+    default: () => ({
+      tool_name: '',
+      tool_args: null,
+      result: null,
+    }),
   },
-  data() {
-    return {}
-  },
-  computed: {
-    argus() {
-      const str = JSON.stringify(this.tool.tool_args, null, 2)
-      return '```json' + '\n' + str + '\n' + '```'
-    },
-    result() {
-      const content = this.tool.result
-      if (!content) {
-        return ''
-      }
-      const info = analyzeContent(content)
-      switch (info.type) {
-        case 'json-object':
-        case 'json-array':
-          return '```json' + '\n' + content + '\n' + '```'
-        case 'code':
-          return '```' + info.language + '\n' + content + '\n' + '```'
-        default:
-          return content
-      }
-    },
-  },
+})
+
+const argsMarkdown = computed(() => {
+  const raw = props.tool.tool_args
+  if (raw == null || raw === '') {
+    return ''
+  }
+  const text = typeof raw === 'string' ? raw : JSON.stringify(raw, null, 2)
+  return '```json\n' + text + '\n```'
+})
+
+const resultMarkdown = computed(() => {
+  const raw = props.tool.result
+  if (!raw) {
+    return ''
+  }
+
+  const content = String(raw)
+  const info = analyzeContent(content)
+  switch (info.type) {
+    case 'json-object':
+    case 'json-array':
+      return '```json\n' + content + '\n```'
+    case 'code':
+      return '```' + info.language + '\n' + content + '\n```'
+    default:
+      return content
+  }
 })
 </script>
 

@@ -1,6 +1,7 @@
 import { $c } from '@/constants'
-import { uuid } from '@/utils/index'
-import { tryParseJson } from '@/utils/content-utils'
+import { uuid } from '@/utils/id'
+import { tryParseJson } from '@/utils/content'
+import { sumUsage } from '@/utils/usage'
 
 const EMPTY_TOOL_FIELDS = {
   requires_confirmation: null,
@@ -69,12 +70,7 @@ function mapMemberRun(childRun, parentRunId) {
     tool_calls: (childRun.tools || []).map(mapRunTool),
     status: $c.RunStatus.Completed,
     parent_run_id: parentRunId,
-    metrics: {
-      time_to_first_token: childRun.metrics?.time_to_first_token,
-      duration: childRun.metrics?.duration,
-      model: childRun.metrics?.details?.model?.[0]?.id,
-      provider: childRun.metrics?.details?.model?.[0]?.provider,
-    },
+    metrics: childRun.metrics || null,
   }
 }
 
@@ -220,7 +216,8 @@ function mapWorkflowRunToMessages(run, sessionId) {
       status,
       pausedRequirement,
       metrics: {
-        duration: run.metrics?.duration,
+        ...run.metrics,
+        ...sumUsage(steps.map((step) => step.metrics)),
       },
     },
   })
@@ -309,12 +306,7 @@ export function mapSessionRunsToMessages(runs, sessionId) {
           mapMemberRun(childRun, run.run_id)
         ),
         status: $c.RunStatus.Completed,
-        metrics: {
-          time_to_first_token: run.metrics?.time_to_first_token,
-          duration: run.metrics?.duration,
-          model: run.metrics?.details?.model?.[0]?.id,
-          provider: run.metrics?.details?.model?.[0]?.provider,
-        },
+        metrics: run.metrics || null,
       },
     })
   })

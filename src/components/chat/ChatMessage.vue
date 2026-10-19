@@ -16,33 +16,27 @@
   </div>
 </template>
 
-<script>
-import { defineComponent } from '@vue/composition-api'
+<script setup>
 import AssistantMessage from '@/components/chat/messages/AssistantMessage.vue'
 import UserMessage from '@/components/chat/messages/UserMessage.vue'
 
-export default defineComponent({
-  name: 'ChatMessage',
-  components: {
-    AssistantMessage,
-    UserMessage,
-  },
-  props: {
-    message: {
-      type: Object,
-      default: () => ({
+defineProps({
+  message: {
+    type: Object,
+    default: () => ({
+      content: '',
+      id: '',
+      role: '',
+      timestamp: '',
+      streamMessage: {
+        status: '',
         content: '',
-        id: '',
-        role: '',
-        timestamp: '',
-        // is null when not role is user
-        streamMessage: {
-          status: '',
-          content: '',
-          reasoning_content: '',
-        },
-      }),
-    },
+        reasoning_content: '',
+        tool_calls: [],
+        member_runs: [],
+        steps: [],
+      },
+    }),
   },
 })
 </script>
@@ -61,10 +55,6 @@ export default defineComponent({
     .message-content {
       align-items: flex-end;
     }
-
-    .message-name {
-      color: fade(@primary-active, 84%);
-    }
   }
 
   .message-content {
@@ -73,7 +63,6 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     max-width: 80%;
-
   }
 }
 </style>

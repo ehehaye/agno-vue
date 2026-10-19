@@ -1,4 +1,5 @@
 import { $c } from '@/constants'
+import { extractUsage, sumUsage } from '@/utils/usage'
 
 function findStep(run, stepId) {
   return run.steps.find((step) => step.id === stepId)
@@ -199,8 +200,23 @@ export function completeWorkflowStep(run, event) {
     status: $c.StepStatus.Completed,
     content: event.content ?? step.content,
     reasoning_content: event.reasoning_content ?? step.reasoning_content,
-    metrics: event.metrics || step.metrics,
+    metrics:
+      event.metrics ||
+      event.step_response?.metrics ||
+      step.metrics,
   })
+}
+
+export function setWorkflowStepMetrics(run, event) {
+  if (!run || !event.metrics) {
+    return run
+  }
+  const stepId = resolveStepId(run, event)
+  const step = stepId ? findStep(run, stepId) : null
+  if (!step) {
+    return run
+  }
+  return updateStep(run, stepId, { metrics: event.metrics })
 }
 
 export function applyWorkflowStepOutput(run, event) {
@@ -331,7 +347,10 @@ export function applyWorkflowRunOutput(run, output) {
     ...pauseStep(run, resolveStepId(run, active), requirement),
     status: $c.RunStatus.Paused,
     pausedRequirement: requirement,
-    metrics: output.metrics || run.metrics,
+    metrics: {
+      ...run.metrics,
+      ...extractUsage(output.metrics),
+    },
   }
 }
 
@@ -355,6 +374,7 @@ export function completeWorkflowRun(run, event) {
   if (!run) {
     return run
   }
+  const usage = sumUsage(run.steps.map((step) => step.metrics))
   return {
     ...run,
     content: event.content ?? run.content,
@@ -369,7 +389,8 @@ export function completeWorkflowRun(run, event) {
     ),
     metrics: {
       ...run.metrics,
-      duration: event.metrics?.duration ?? run.metrics?.duration,
+      ...usage,
+      ...extractUsage(event.metrics),
     },
   }
 }

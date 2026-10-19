@@ -6,7 +6,7 @@ import {
   onMounted,
   watch,
 } from '@vue/composition-api'
-import { createTextVNode } from '@/hooks/createTextVNode'
+import { createTextVNode } from './createTextVNode'
 
 /**
  * Markdown 文本节点渲染器。

@@ -10,6 +10,7 @@ const totalCount = ref(0)
 const isLoading = ref(false)
 const error = ref(null)
 const selectedSessionIds = ref(new Set())
+const PAGE_SIZE = 20
 let sessionsRequestToken = 0
 let sessionsController = null
 
@@ -50,7 +51,7 @@ async function fetchSessions(pageNum = 1) {
       type: selectedEntity.value.type,
       component_id: selectedEntity.value.id,
       page: String(pageNum),
-      limit: '20',
+      limit: String(PAGE_SIZE),
     })
 
     const response = await fetch(
@@ -103,9 +104,9 @@ async function refreshSessions() {
   await fetchSessions(page.value)
 }
 
-async function deleteSelectedSessions() {
+async function deleteSessions(sessionIds) {
   if (
-    selectedSessionIds.value.size === 0 ||
+    sessionIds.length === 0 ||
     connectionStatus.value !== $c.ConnStatus.Connected
   ) {
     return false
@@ -116,9 +117,13 @@ async function deleteSelectedSessions() {
 
   try {
     const selectedSessions = sessions.value.filter((session) =>
-      selectedSessionIds.value.has(session.session_id)
+      sessionIds.includes(session.session_id)
     )
-    const sessionIds = selectedSessions.map((session) => session.session_id)
+    if (selectedSessions.length === 0) {
+      return false
+    }
+
+    const ids = selectedSessions.map((session) => session.session_id)
     const sessionTypes = selectedSessions.map((session) => session.session_type)
 
     const response = await fetch(`${serverUrl.value}/sessions`, {
@@ -127,7 +132,7 @@ async function deleteSelectedSessions() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        session_ids: sessionIds,
+        session_ids: ids,
         session_types: sessionTypes,
       }),
     })
@@ -136,12 +141,16 @@ async function deleteSelectedSessions() {
       throw new Error(`Failed to delete sessions: ${response.status}`)
     }
 
-    selectedSessionIds.value = new Set()
-    if (sessionIds.includes(currentSessionId.value)) {
+    const deleted = new Set(ids)
+    selectedSessionIds.value = new Set(
+      [...selectedSessionIds.value].filter((id) => !deleted.has(id))
+    )
+    if (deleted.has(currentSessionId.value)) {
       setCurrentSessionId(null)
     }
+
     const nextPage =
-      sessionIds.length >= sessions.value.length && page.value > 1
+      ids.length >= sessions.value.length && page.value > 1
         ? page.value - 1
         : page.value
     await fetchSessions(nextPage)
@@ -153,6 +162,14 @@ async function deleteSelectedSessions() {
   } finally {
     isLoading.value = false
   }
+}
+
+async function deleteSelectedSessions() {
+  return deleteSessions([...selectedSessionIds.value])
+}
+
+async function deleteSession(sessionId) {
+  return deleteSessions([sessionId])
 }
 
 function toggleSessionSelection(sessionId) {
@@ -176,9 +193,12 @@ function clearSelection() {
 }
 
 events.on(RuntimeEvents.SESSION_CREATED, (session) => {
-  sessions.value = [session, ...sessions.value]
   setCurrentSessionId(session.session_id)
-  // TODO: handle pages
+  totalCount.value += 1
+  totalPages.value = Math.max(1, Math.ceil(totalCount.value / PAGE_SIZE))
+  if (page.value === 1) {
+    sessions.value = [session, ...sessions.value].slice(0, PAGE_SIZE)
+  }
 })
 
 watch(
@@ -204,6 +224,7 @@ export function useSessionManager() {
     selectedSessionIds,
     fetchSessions,
     deleteSelectedSessions,
+    deleteSession,
     toggleSessionSelection,
     selectAllSessions,
     clearSelection,
