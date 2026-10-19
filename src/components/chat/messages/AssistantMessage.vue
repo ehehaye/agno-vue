@@ -47,7 +47,8 @@
 
 <script>
 import { defineComponent } from '@vue/composition-api'
-import { MarkdownRenderer, StreamingIndicator } from '@/components/common'
+import { StreamingIndicator } from '@/components/common'
+import { MarkdownRenderer } from '@/components/md'
 import { CUSTOM_COMPONENTS, CUSTOM_TAGS } from '@/components/chat/hydration'
 import {
   DurationBlock,

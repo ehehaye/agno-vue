@@ -47,7 +47,8 @@
 
 <script>
 import { defineComponent } from '@vue/composition-api'
-import { Collapse, MarkdownRenderer } from '@/components/common'
+import { Collapse } from '@/components/common'
+import { MarkdownRenderer } from '@/components/md'
 import { WrenchIcon } from '@/components/icons'
 import { analyzeContent } from '@/utils/content-utils'
 import { $c } from '@/constants'

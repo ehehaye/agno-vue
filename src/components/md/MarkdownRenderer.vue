@@ -18,6 +18,19 @@ import 'highlight.js/styles/vs.css'
 import { parseDocument } from 'htmlparser2'
 import NodeRenderer from './NodeRenderer.vue'
 
+const escapeHtml = value =>
+  String(value ?? '').replace(
+    /[&<>"']/g,
+    ch =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[ch]
+  )
+
 // https://marked.js.org/using_pro#renderer
 const renderer = {
   blockquote(token) {
@@ -25,17 +38,20 @@ const renderer = {
     return `<blockquote class="md-blockquote">${inner}</blockquote>`
   },
 
-  code({ text, lang }) {
+  code({ text, lang, raw }) {
     const language = hljs.getLanguage(lang) ? lang : 'plaintext'
     const highlighted = hljs.highlight(text, { language }).value
-    const langTag = lang ? `<div class="md-code-lang">${lang}</div>` : ''
+    const langTag = lang ? `<div class="md-code-lang">${escapeHtml(lang)}</div>` : ''
     const lines = text.split('\n')
     const lineNumbers = lines.map((_, i) => `<span>${i + 1}</span>`).join('')
-    return `<div class="md-code-wrapper">${langTag}<div class="md-code-scroll"><div class="md-code-lines">${lineNumbers}</div><pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre></div></div>`
+    // 流式输出中未闭合的代码块可能混入反引号，完整性无法确认
+    const lastLine = (raw || '').trimEnd().split('\n').pop().trim()
+    const complete = /^(`{3,}|~{3,})/.test(lastLine)
+    return `<div class="md-code-wrapper" data-lang="${escapeHtml(lang || language)}" data-complete="${~~complete}">${langTag}<div class="md-code-scroll"><div class="md-code-lines">${lineNumbers}</div><pre class="md-pre"><code class="md-code hljs language-${language}">${highlighted}</code></pre></div></div>`
   },
 
   codespan({ text }) {
-    return `<code class="md-code">${text}</code>`
+    return `<code class="md-code">${escapeHtml(text)}</code>`
   },
 
   heading({ tokens, depth }) {
@@ -48,11 +64,11 @@ const renderer = {
   },
 
   image({ href, title, text }) {
-    return `<img class="md-img" src="${href}"${title ? ` title="${title}"` : ''} alt="${text}" />`
+    return `<img class="md-img" src="${escapeHtml(href)}"${title ? ` title="${escapeHtml(title)}"` : ''} alt="${escapeHtml(text)}" />`
   },
 
   link({ href, title, text }) {
-    return `<a class="md-link" href="${href}"${title ? ` title="${title}"` : ''}>${text}</a>`
+    return `<a class="md-link" href="${escapeHtml(href)}"${title ? ` title="${escapeHtml(title)}"` : ''}>${text}</a>`
   },
 
   list(token) {
@@ -129,17 +145,14 @@ export default defineComponent({
   data() {
     return {
       htmlRafId: null,
-      pendingUpdate: false,
+      lastHtml: '',
       astTree: [],
     }
   },
   watch: {
     content: {
       handler() {
-        if (!this.pendingUpdate) {
-          this.pendingUpdate = true
-          this.updateAstTree()
-        }
+        this.updateAstTree()
       },
       immediate: true,
     },
@@ -152,7 +165,7 @@ export default defineComponent({
   methods: {
     getHtml() {
       const { content } = this
-      /** 
+      /**
        * Avoid flickering by building self-healing markdown content used remend
        * example: "This is **bold text"
        * output: "This is **bold text**"
@@ -167,12 +180,15 @@ export default defineComponent({
         cancelAnimationFrame(this.htmlRafId)
       }
       this.htmlRafId = requestAnimationFrame(() => {
-        this.pendingUpdate = false
         this.htmlRafId = null
-
-        // Convert HTML to vNodes so that every content change triggers Vue's diff algorithm for incremental updates only.
         const html = this.getHtml()
-        this.astTree = html ? parseDocument(html).children : []
+        if (this.lastHtml === html) {
+          return
+        }
+        this.lastHtml = html
+        // Convert HTML to vNodes so that every content change triggers Vue's diff algorithm for incremental updates only.
+        // Freezing lets Vue 2 skip deep reactive observation of the parsed tree; the tree must then be replaced wholesale.
+        this.astTree = Object.freeze(html ? parseDocument(html).children : [])
       })
     },
   },
@@ -183,6 +199,15 @@ export default defineComponent({
 .markdown-renderer {
   line-height: 1.8;
   color: @text-color;
+
+  // 还原列表样式
+  ul > li {
+    list-style-type: disc;
+  }
+
+  ol > li {
+    list-style-type: decimal;
+  }
 
   .md-h1,
   .md-h2,
@@ -229,6 +254,7 @@ export default defineComponent({
     border-radius: @border-radius-sm;
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
+    line-break: anywhere;
   }
 
   .md-code-wrapper {
