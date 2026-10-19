@@ -5,9 +5,6 @@
 // Thresholds for content size handling
 export const CONTENT_THRESHOLDS = {
   SHORT: 200,
-  MEDIUM: 500,
-  LONG: 5000,
-  VERY_LONG: 50000,
 }
 
 // Code language detection patterns
@@ -129,56 +126,6 @@ export function countLines(content) {
 }
 
 /**
- * Get human-readable size string
- */
-export function formatSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-/**
- * Truncate content to a maximum length with ellipsis
- */
-export function truncateContent(content, maxLength) {
-  if (content.length <= maxLength) {
-    return {
-      truncated: content,
-      wasTruncated: false,
-      originalLength: content.length,
-    }
-  }
-
-  return {
-    truncated: content.slice(0, maxLength) + '...',
-    wasTruncated: true,
-    originalLength: content.length,
-  }
-}
-
-/**
- * Get preview lines from content
- */
-export function getPreviewLines(content, lineLimit) {
-  const lines = content.split('\n')
-  const totalLines = lines.length
-
-  if (totalLines <= lineLimit) {
-    return {
-      preview: content,
-      remainingLines: 0,
-      totalLines,
-    }
-  }
-
-  return {
-    preview: lines.slice(0, lineLimit).join('\n'),
-    remainingLines: totalLines - lineLimit,
-    totalLines,
-  }
-}
-
-/**
  * Analyze content and return metadata for rendering decisions
  */
 export function analyzeContent(content) {
@@ -218,51 +165,3 @@ export function analyzeContent(content) {
   }
 }
 
-/**
- * Get item count summary for JSON arrays/objects
- */
-export function getItemCount(value) {
-  if (isObject(value)) {
-    const keys = Object.keys(value)
-    return {
-      label: keys.length === 1 ? '1 key' : `${keys.length} keys`,
-      count: keys.length,
-    }
-  }
-  if (isArray(value)) {
-    return {
-      label: value.length === 1 ? '1 item' : `${value.length} items`,
-      count: value.length,
-    }
-  }
-  return null
-}
-
-/**
- * Estimate the "depth" of a JSON structure for collapse decisions
- */
-export function estimateDepth(value, currentDepth = 0) {
-  if (currentDepth > 10) return currentDepth
-
-  if (isObject(value)) {
-    const childDepths = Object.values(value).map((v) => estimateDepth(v, currentDepth + 1))
-    return Math.max(currentDepth, ...childDepths)
-  }
-  if (isArray(value)) {
-    if (value.length === 0) return currentDepth
-    const childDepths = value.map((v) => estimateDepth(v, currentDepth + 1))
-    return Math.max(currentDepth, ...childDepths)
-  }
-  return currentDepth
-}
-
-/**
- * Check if a JSON value is "simple" (doesn't need collapsing)
- */
-export function isSimpleValue(value) {
-  if (value === null || value === undefined) return true
-  if (typeof value !== 'object') return true
-  if (Array.isArray(value) && value.length === 0) return true
-  if (isObject(value) && Object.keys(value).length === 0) return true
-  return false
-}

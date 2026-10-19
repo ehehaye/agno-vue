@@ -2,13 +2,46 @@
   <div class="sessions-section">
     <div class="section-header">
       <h3 class="section-title">{{ $t('sidebar.historySessions') }}</h3>
+      <div class="header-actions">
+        <button
+          type="button"
+          class="tool-btn"
+          @click="toggleSelectionMode"
+        >
+          {{ selectionMode ? $t('sidebar.cancel') : $t('sidebar.select') }}
+        </button>
+        <button
+          type="button"
+          class="add-btn ai-button"
+          :aria-label="$t('sidebar.newSession')"
+          @click="startNewSession"
+        >
+          +
+        </button>
+      </div>
+    </div>
+
+    <div
+      v-if="selectionMode"
+      class="bulk-actions"
+    >
       <button
-        class="add-btn ai-button"
-        @click="setCurrentSessionId(null)"
+        type="button"
+        class="tool-btn"
+        @click="selectAllSessions"
       >
-        +
+        {{ $t('sidebar.selectAll') }}
+      </button>
+      <button
+        type="button"
+        class="tool-btn tool-btn--danger"
+        :disabled="selectedSessionIds.size === 0"
+        @click="handleBulkDelete"
+      >
+        {{ $t('sidebar.deleteSelected') }} ({{ selectedSessionIds.size }})
       </button>
     </div>
+
     <div
       v-if="sessionsError"
       class="flex items-center justify-between gap-sm px-md py-xs text-xs text-danger"
@@ -23,6 +56,7 @@
         {{ $t('sidebar.retry') }}
       </button>
     </div>
+
     <RecycleScroller
       v-if="displayedSessions.length"
       :items="displayedSessions"
@@ -33,12 +67,20 @@
       <template #default="{ item: session }">
         <div
           class="session-item"
-          :class="{ active: session.session_id === currentSessionId }"
+          :class="{
+            active: session.session_id === currentSessionId,
+            selected: selectionMode && selectedSessionIds.has(session.session_id),
+          }"
           tabindex="0"
-          @click="handleLoadSession(session.session_id)"
-          @keydown.enter.prevent="handleLoadSession(session.session_id)"
-          @keydown.space.prevent="handleLoadSession(session.session_id)"
+          @click="handleSessionClick(session.session_id)"
+          @keydown.enter.prevent="handleSessionClick(session.session_id)"
+          @keydown.space.prevent="handleSessionClick(session.session_id)"
         >
+          <span
+            v-if="selectionMode"
+            class="select-indicator"
+            :class="{ checked: selectedSessionIds.has(session.session_id) }"
+          />
           <div class="session-content">
             <div
               class="session-title"
@@ -49,7 +91,10 @@
             <div class="session-time">{{ formatTime(session.created_at) }}</div>
           </div>
           <button
+            v-if="!selectionMode"
+            type="button"
             class="delete-btn ai-button"
+            :aria-label="$t('sidebar.deleteSession')"
             @click.stop="handleDelete(session.session_id)"
           >
             x
@@ -63,11 +108,36 @@
     >
       <p>{{ $t('sidebar.noSessions') }}</p>
     </div>
+
+    <div
+      v-if="totalPages > 1"
+      class="session-pager"
+    >
+      <button
+        type="button"
+        class="pager-btn"
+        :disabled="page <= 1 || isLoading"
+        :aria-label="$t('sidebar.prev')"
+        @click="fetchSessions(page - 1)"
+      >
+        &lsaquo;
+      </button>
+      <span>{{ page }} / {{ totalPages }}</span>
+      <button
+        type="button"
+        class="pager-btn"
+        :disabled="page >= totalPages || isLoading"
+        :aria-label="$t('sidebar.next')"
+        @click="fetchSessions(page + 1)"
+      >
+        &rsaquo;
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from '@vue/composition-api'
+import { computed, ref } from '@vue/composition-api'
 import { useSessionManager } from '@/hooks/agno/useSessionManager.js'
 import { useAgentRun } from '@/hooks/agno/useAgentRun.js'
 import { useConfig } from '@/hooks/agno/useConfig'
@@ -80,12 +150,20 @@ const { currentSessionId, setCurrentSessionId } = useConfig()
 const { loadSession } = useAgentRun()
 const {
   sessions,
+  page,
+  totalPages,
+  isLoading,
   selectedSessionIds,
   deleteSelectedSessions,
-  error: sessionsError,
+  toggleSessionSelection,
+  selectAllSessions,
+  clearSelection,
   refreshSessions,
+  fetchSessions,
+  error: sessionsError,
 } = useSessionManager()
 const sessionItemHeight = 64
+const selectionMode = ref(false)
 
 const formatTime = (time) => new Date(time).toLocaleString()
 const formatSessionName = (name) => {
@@ -109,6 +187,17 @@ const displayedSessions = computed(() => sessions.value.map(session => ({
   session_name: formatSessionName(session.session_name),
 })))
 
+const toggleSelectionMode = () => {
+  selectionMode.value = !selectionMode.value
+  clearSelection()
+}
+
+const startNewSession = () => {
+  selectionMode.value = false
+  clearSelection()
+  setCurrentSessionId(null)
+}
+
 const handleLoadSession = (id) => {
   if (id !== currentSessionId.value) {
     setCurrentSessionId(id)
@@ -116,14 +205,35 @@ const handleLoadSession = (id) => {
   }
 }
 
+const handleSessionClick = (id) => {
+  if (selectionMode.value) {
+    toggleSessionSelection(id)
+    return
+  }
+  handleLoadSession(id)
+}
+
 const handleDelete = async (id) => {
   if (!window.confirm(i18n.t('sidebar.deleteConfirm'))) {
     return
   }
 
-  // TODO: handle multiple selection
   selectedSessionIds.value = new Set([id])
   await deleteSelectedSessions()
+}
+
+const handleBulkDelete = async () => {
+  if (selectedSessionIds.value.size === 0) {
+    return
+  }
+  if (!window.confirm(i18n.t('sidebar.deleteConfirm'))) {
+    return
+  }
+  const deleted = await deleteSelectedSessions()
+  if (deleted) {
+    selectionMode.value = false
+    clearSelection()
+  }
 }
 </script>
 
@@ -150,6 +260,12 @@ const handleDelete = async (id) => {
       color: @text-color;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: @spacing-sm;
+    }
+
     .add-btn {
       width: 28px;
       height: 28px;
@@ -158,6 +274,46 @@ const handleDelete = async (id) => {
       align-items: center;
       justify-content: center;
     }
+  }
+
+  .tool-btn {
+    padding: 2px @spacing-sm;
+    border: none;
+    border-radius: @border-radius-sm;
+    background: transparent;
+    color: @text-secondary;
+    font-size: 12px;
+    cursor: pointer;
+    transition:
+      color @transition-fast,
+      background-color @transition-fast,
+      opacity @transition-fast;
+
+    &:hover:not(:disabled) {
+      color: @primary-color;
+      background: fade(@primary-color, 8%);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--danger {
+      color: @error-color;
+
+      &:hover:not(:disabled) {
+        color: @error-color;
+        background: fade(@error-color, 10%);
+      }
+    }
+  }
+
+  .bulk-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: @spacing-sm;
   }
 
   .sessions-list {
@@ -189,9 +345,13 @@ const handleDelete = async (id) => {
         border-color: @primary-color;
       }
 
-      &.active {
+      &.active,
+      &.selected {
         background: fade(@primary-color, 8%);
         border-color: @primary-color;
+      }
+
+      &.active {
         border-left-width: 3px;
         border-left-color: @primary-color;
       }
@@ -206,6 +366,25 @@ const handleDelete = async (id) => {
       &:focus-within .delete-btn {
         opacity: 1;
         transform: scale(1);
+      }
+
+      .select-indicator {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        margin-right: @spacing-sm;
+        border: 1px solid @border-color;
+        border-radius: 50%;
+        background: @surface-color;
+        transition:
+          background-color @transition-fast,
+          border-color @transition-fast;
+
+        &.checked {
+          border-color: @primary-color;
+          background: @primary-color;
+          box-shadow: inset 0 0 0 3px @surface-color;
+        }
       }
 
       .session-content {
@@ -272,6 +451,38 @@ const handleDelete = async (id) => {
       justify-content: center;
       color: lighten(@text-color, 20%);
       font-size: 14px;
+    }
+  }
+
+  .session-pager {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: @spacing-md;
+    padding-top: @spacing-sm;
+    font-size: 12px;
+    color: @text-secondary;
+
+    .pager-btn {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid @border-color;
+      border-radius: @border-radius-sm;
+      background: @surface-color;
+      color: @text-secondary;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        border-color: @primary-color;
+        color: @primary-color;
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
     }
   }
 }

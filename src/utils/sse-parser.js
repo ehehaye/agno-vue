@@ -121,12 +121,3 @@ export class SSEParser {
     onEvent(payload)
   }
 }
-
-export function isEventType(event, type) {
-  return (
-    typeof event === 'object' &&
-    event !== null &&
-    'event' in event &&
-    event.event === type
-  )
-}
